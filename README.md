@@ -1,32 +1,25 @@
-# 화요일 도시락 (Lunch Bento App)
+# CODING AGENTS: READ THIS FIRST
 
-Company lunch-box attendance tracker. Each employee picks their name, marks
-whether they're attending and whether they'll eat, and the dashboard shows
-who's in, who's out, and who hasn't answered yet — implemented from the
-design in `project/Lunch Bento App.dc.html` (see `chats/` for the design
-conversation that produced it).
+This is a **handoff bundle** from Claude Design (claude.ai/design).
 
-## Structure
+A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
 
-- `server/` — Express + SQLite REST API (roster, daily responses, reminder settings)
-- `web/` — React + Vite frontend
-- `project/`, `chats/` — original Claude Design handoff bundle (reference only)
+## What you should do — IMPORTANT
 
-## Run it
+**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
 
-```bash
-# backend
-cd server
-npm install
-npm run start        # http://localhost:3001
+**Read `project/Lunch Bento App.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
 
-# frontend (separate terminal)
-cd web
-npm install
-npm run dev           # http://localhost:5173, proxies /api to the backend
-```
+**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
 
-Open http://localhost:5173, pick your name from the roster, and go.
+## About the design files
 
-Data lives in `server/data/lunch.db` (SQLite, gitignored) and persists across
-restarts.
+The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+
+**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+
+## Bundle contents
+
+- `README.md` — this file
+- `chats/` — conversation transcripts (read these!)
+- `project/` — the `회사 점심 도시락 앱` project files (HTML prototypes, assets, components)
