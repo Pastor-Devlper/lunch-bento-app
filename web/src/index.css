@@ -546,10 +546,6 @@ button {
     font-size: 28px;
   }
 
-  .summary-stats {
-    grid-template-columns: 1fr;
-  }
-
   .picker-container {
     margin: 20px auto;
   }
