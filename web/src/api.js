@@ -12,8 +12,19 @@ async function request(path, options) {
   return res.json();
 }
 
+export function fetchDepartments() {
+  return request('/departments');
+}
+
 export function fetchPeople() {
   return request('/people');
+}
+
+export function addPerson({ name, department }) {
+  return request('/people', {
+    method: 'POST',
+    body: JSON.stringify({ name, department }),
+  });
 }
 
 export function fetchDay(date) {

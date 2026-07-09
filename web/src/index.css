@@ -389,10 +389,28 @@ button {
   margin-bottom: 24px;
 }
 
-.picker-list {
+.picker-department {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.picker-department:last-child {
+  margin-bottom: 0;
+}
+
+.picker-department-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4ECDC4;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+.picker-department-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .picker-btn {
@@ -405,11 +423,77 @@ button {
   cursor: pointer;
   transition: all 0.2s ease;
   color: #333;
+  text-align: left;
 }
 
 .picker-btn:hover {
   background: #E8F8F5;
   border-color: #4ECDC4;
+}
+
+.picker-add-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  color: #999;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.picker-add-btn:hover {
+  border-color: #4ECDC4;
+  color: #4ECDC4;
+  background: #E8F8F5;
+}
+
+.picker-add-form {
+  display: flex;
+  gap: 8px;
+}
+
+.picker-add-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 2px solid #4ECDC4;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.picker-add-confirm {
+  padding: 10px 14px;
+  background: #4ECDC4;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.picker-add-cancel {
+  padding: 10px 14px;
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.picker-add-error {
+  color: #FF6B6B;
+  font-size: 12px;
+  margin-top: 6px;
 }
 
 .picker-error {
@@ -462,5 +546,9 @@ button {
 
   .summary-stats {
     grid-template-columns: 1fr;
+  }
+
+  .picker-container {
+    margin: 20px auto;
   }
 }

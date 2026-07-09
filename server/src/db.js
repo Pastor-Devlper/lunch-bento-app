@@ -1,21 +1,26 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, '..', 'data', 'lunch.db');
 
-import fs from 'node:fs';
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+export const DEPARTMENTS = [
+  '총무국', '출판국', '지운국', '훈련국', 'Pearl', 'YRG', 'Kids', '방문',
+];
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS people (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    department TEXT NOT NULL DEFAULT '방문',
     reminder_enabled INTEGER NOT NULL DEFAULT 1
   );
 
@@ -30,17 +35,23 @@ db.exec(`
   );
 `);
 
+const columns = db.prepare('PRAGMA table_info(people)').all().map((c) => c.name);
+if (!columns.includes('department')) {
+  db.exec("ALTER TABLE people ADD COLUMN department TEXT NOT NULL DEFAULT '방문'");
+}
+
 const ROSTER = [
-  '김철수', '이순신', '최민지', '박민준',
-  '박영희', '장민석', '정지훈',
-  '정한울', '이재훈',
+  ['총무국', '권준호'], ['총무국', '김효선'], ['총무국', '심태석'],
+  ['출판국', '김만석'], ['출판국', '김하경'], ['출판국', '김하솜'],
+  ['지운국', '한상규'],
+  ['훈련국', '김해수'], ['훈련국', '유남희'],
+  ['Pearl', '서영수'],
+  ['YRG', '유소현'],
+  ['Kids', '권은미'],
 ];
 
-const seedCount = db.prepare('SELECT COUNT(*) AS c FROM people').get().c;
-if (seedCount === 0) {
-  const insert = db.prepare('INSERT INTO people (name) VALUES (?)');
-  const insertMany = db.transaction((names) => {
-    for (const name of names) insert.run(name);
-  });
-  insertMany(ROSTER);
-}
+const insert = db.prepare('INSERT OR IGNORE INTO people (name, department) VALUES (?, ?)');
+const insertMany = db.transaction((rows) => {
+  for (const [department, name] of rows) insert.run(name, department);
+});
+insertMany(ROSTER);

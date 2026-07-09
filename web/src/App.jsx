@@ -6,7 +6,7 @@ import MyStatus from './components/MyStatus.jsx';
 import Settings from './components/Settings.jsx';
 import Footer from './components/Footer.jsx';
 import NamePicker from './components/NamePicker.jsx';
-import { fetchPeople, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
+import { fetchPeople, fetchDepartments, addPerson, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
 import { todayISO, formatKoreanDate, formatTime } from './dateUtils.js';
 
 const IDENTITY_KEY = 'lunchbento.personId';
@@ -14,6 +14,7 @@ const POLL_MS = 10000;
 
 export default function App() {
   const [people, setPeople] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [personId, setPersonId] = useState(() => {
     const stored = localStorage.getItem(IDENTITY_KEY);
     return stored ? Number(stored) : null;
@@ -28,6 +29,7 @@ export default function App() {
 
   useEffect(() => {
     fetchPeople().then(setPeople).catch(() => setPickerError('명단을 불러오지 못했어요. 새로고침해주세요.'));
+    fetchDepartments().then(setDepartments).catch(() => {});
   }, []);
 
   const refreshDay = useCallback(() => {
@@ -54,6 +56,14 @@ export default function App() {
     localStorage.setItem(IDENTITY_KEY, String(id));
     setPersonId(id);
     setPickerError('');
+  }
+
+  function handleAddPerson(name, department) {
+    return addPerson({ name, department }).then((person) => {
+      setPeople((prev) => [...prev, person]);
+      handleSelectPerson(person.id);
+      return person;
+    });
   }
 
   function handleSwitchUser() {
@@ -90,7 +100,13 @@ export default function App() {
   if (personId == null) {
     return (
       <div className="app-container">
-        <NamePicker people={people} onSelect={handleSelectPerson} error={pickerError} />
+        <NamePicker
+          people={people}
+          departments={departments}
+          onSelect={handleSelectPerson}
+          onAdd={handleAddPerson}
+          error={pickerError}
+        />
       </div>
     );
   }

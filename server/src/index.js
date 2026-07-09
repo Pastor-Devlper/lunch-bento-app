@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { db } from './db.js';
+import { db, DEPARTMENTS } from './db.js';
 
 const app = express();
 app.use(cors());
@@ -10,10 +10,35 @@ function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
 
+// Departments, in display order (used to group the name picker).
+app.get('/api/departments', (req, res) => {
+  res.json(DEPARTMENTS);
+});
+
 // Full roster (used for the name picker / identity screen).
 app.get('/api/people', (req, res) => {
-  const people = db.prepare('SELECT id, name FROM people ORDER BY id').all();
+  const people = db.prepare('SELECT id, name, department FROM people ORDER BY id').all();
   res.json(people);
+});
+
+// Add a new person to a department (new hire, or a one-off visitor under '방문').
+app.post('/api/people', (req, res) => {
+  const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+  const { department } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: '이름을 입력해주세요' });
+  }
+  if (!DEPARTMENTS.includes(department)) {
+    return res.status(400).json({ error: 'invalid department' });
+  }
+  const existing = db.prepare('SELECT id FROM people WHERE name = ?').get(name);
+  if (existing) {
+    return res.status(409).json({ error: '이미 등록된 이름이에요' });
+  }
+
+  const result = db.prepare('INSERT INTO people (name, department) VALUES (?, ?)').run(name, department);
+  res.status(201).json({ id: result.lastInsertRowid, name, department });
 });
 
 // Everyone's attendance/meal status for a given date.
