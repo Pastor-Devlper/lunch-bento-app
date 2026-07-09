@@ -499,19 +499,22 @@ button {
 }
 
 .picker-add-form {
-  display: flex;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto auto;
   gap: 8px;
+  padding: 0;
+  width: 100%;
 }
 
 .picker-add-input {
-  flex: 1;
-  min-width: 0;
   padding: 10px 12px;
   border: 2px solid #4ECDC4;
   border-radius: 12px;
   font-size: 14px;
   font-family: inherit;
   outline: none;
+  grid-column: 1;
 }
 
 .picker-add-confirm {
