@@ -141,7 +141,8 @@ export default function App() {
   const attendingPeople = day.filter((p) => p.attending === true);
   const absentPeople = day.filter((p) => p.attending === false);
   const pendingPeople = day.filter((p) => p.attending === null);
-  const eatingCount = attendingPeople.filter((p) => p.meal === '먹음').length;
+  const eatingPeople = day.filter((p) => p.meal === '먹음');
+  const eatingCount = eatingPeople.length;
 
   return (
     <div className="app-container">
@@ -163,7 +164,7 @@ export default function App() {
 
       <StatusGrid
         attendingPeople={attendingPeople}
-        absentPeople={absentPeople}
+        eatingPeople={eatingPeople}
         pendingPeople={pendingPeople}
         myPersonId={personId}
       />

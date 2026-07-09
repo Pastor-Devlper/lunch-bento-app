@@ -23,7 +23,7 @@ function StatusColumn({ variant, icon, title, people, myPersonId, showMeal, empt
   );
 }
 
-export default function StatusGrid({ attendingPeople, absentPeople, pendingPeople, myPersonId }) {
+export default function StatusGrid({ attendingPeople, eatingPeople, pendingPeople, myPersonId }) {
   return (
     <div className="status-grid">
       <StatusColumn
@@ -32,15 +32,16 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
         title="참석"
         people={attendingPeople}
         myPersonId={myPersonId}
-        showMeal
+        showMeal={false}
         emptyText="아직 참석자가 없어요"
       />
       <StatusColumn
         variant="absent"
-        icon="✗"
-        title="미참석"
-        people={absentPeople}
+        icon="🍽️"
+        title="식사"
+        people={eatingPeople}
         myPersonId={myPersonId}
+        showMeal={false}
         emptyText="아직 없어요"
       />
       <StatusColumn

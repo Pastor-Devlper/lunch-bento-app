@@ -184,6 +184,12 @@ button {
   color: #FF6B6B;
 }
 
+.status-eating .status-header {
+  background: #FFF4E6;
+  border-bottom-color: #FFA500;
+  color: #FFA500;
+}
+
 .status-pending .status-header {
   background: #F7F9FC;
   border-bottom-color: #A0AEC0;
