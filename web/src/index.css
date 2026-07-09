@@ -183,6 +183,10 @@ button {
   min-height: 48px;
 }
 
+.status-pending {
+  grid-column: 1 / -1;
+}
+
 .status-pending .status-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
