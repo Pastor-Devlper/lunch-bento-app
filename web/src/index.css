@@ -531,6 +531,10 @@ button {
   .header-title {
     font-size: 32px;
   }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
