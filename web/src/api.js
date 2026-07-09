@@ -1,4 +1,4 @@
-const BASE = 'https://lunch-bento-server.onrender.com';
+const BASE = 'https://lunch-bento-server.onrender.com/api';
 
 async function request(path, options) {
   const res = await fetch(`${BASE}${path}`, {
