@@ -118,6 +118,9 @@ button {
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .stat-card:hover {
@@ -147,6 +150,10 @@ button {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  margin-bottom: 40px;
+}
+
+.status-grid-container {
   margin-bottom: 40px;
 }
 
@@ -207,6 +214,12 @@ button {
   flex-direction: column;
   gap: 12px;
   min-height: 48px;
+}
+
+.status-list-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
 .status-pending {

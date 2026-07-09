@@ -29,6 +29,7 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [pickerError, setPickerError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('attending');
 
   const date = todayISO();
 
@@ -157,15 +158,14 @@ export default function App() {
 
       <SummaryStats
         attendingCount={attendingPeople.length}
-        absentCount={absentPeople.length}
-        pendingCount={pendingPeople.length}
         eatingCount={eatingCount}
+        onTabChange={setSelectedTab}
       />
 
       <StatusGrid
         attendingPeople={attendingPeople}
         eatingPeople={eatingPeople}
-        pendingPeople={pendingPeople}
+        selectedTab={selectedTab}
         myPersonId={personId}
       />
 
