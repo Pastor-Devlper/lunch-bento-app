@@ -112,7 +112,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <Header dateStr={formatKoreanDate()} />
+      <Header dateStr={formatKoreanDate()} myName={me?.name} onSwitchUser={handleSwitchUser} />
 
       <SummaryStats
         attendingCount={attendingPeople.length}
@@ -137,7 +137,7 @@ export default function App() {
 
       <Settings reminderEnabled={reminderEnabled} onToggle={handleToggleReminder} />
 
-      <Footer lastUpdated={lastUpdated} myName={me?.name} onSwitchUser={handleSwitchUser} />
+      <Footer lastUpdated={lastUpdated} />
     </div>
   );
 }
