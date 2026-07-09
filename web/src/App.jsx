@@ -66,7 +66,6 @@ export default function App() {
   function handleAddPerson(name, department) {
     return addPerson({ name, department }).then((person) => {
       setPeople((prev) => [...prev, person]);
-      handleSelectPerson(person.id);
       return person;
     });
   }
