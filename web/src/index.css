@@ -183,6 +183,12 @@ button {
   min-height: 48px;
 }
 
+.status-pending .status-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
 .empty-hint {
   padding: 12px 16px;
   color: #aaa;
