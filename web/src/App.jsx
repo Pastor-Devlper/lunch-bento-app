@@ -158,6 +158,8 @@ export default function App() {
 
       <SummaryStats
         attendingCount={attendingPeople.length}
+        absentCount={absentPeople.length}
+        pendingCount={pendingPeople.length}
         eatingCount={eatingCount}
         onTabChange={setSelectedTab}
       />
