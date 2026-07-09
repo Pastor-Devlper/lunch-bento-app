@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE || '/api';
+const BASE = 'https://lunch-bento-server.onrender.com';
 
 async function request(path, options) {
   const res = await fetch(`${BASE}${path}`, {
