@@ -139,6 +139,13 @@ export default function App() {
     <div className="app-container">
       <Header dateStr={formatKoreanDate()} myName={me?.name} onSwitchUser={handleSwitchUser} />
 
+      <MyStatus
+        myAttending={myAttending}
+        myMeal={myMeal}
+        onSetAttending={handleSetAttending}
+        onSetMeal={handleSetMeal}
+      />
+
       <SummaryStats
         attendingCount={attendingPeople.length}
         absentCount={absentPeople.length}
@@ -151,13 +158,6 @@ export default function App() {
         absentPeople={absentPeople}
         pendingPeople={pendingPeople}
         myPersonId={personId}
-      />
-
-      <MyStatus
-        myAttending={myAttending}
-        myMeal={myMeal}
-        onSetAttending={handleSetAttending}
-        onSetMeal={handleSetMeal}
       />
 
       <Settings reminderEnabled={reminderEnabled} onToggle={handleToggleReminder} onDelete={handleDeleteUser} />
