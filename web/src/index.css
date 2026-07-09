@@ -23,6 +23,7 @@ button {
 .header {
   margin-bottom: 40px;
   animation: slideDown 0.6s ease-out;
+  text-align: center;
 }
 
 .header-top {
