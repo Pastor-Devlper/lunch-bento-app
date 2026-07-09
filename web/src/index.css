@@ -44,7 +44,7 @@ button {
 .header-user-badge {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   font-size: 13px;
   font-weight: 500;
@@ -85,11 +85,11 @@ button {
   font-size: 14px;
   color: #666;
   margin-bottom: 0;
-  text-align: center;
+  text-align: right;
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .deadline-box {
