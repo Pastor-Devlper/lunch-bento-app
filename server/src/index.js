@@ -6,9 +6,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PASSWORD = '3927##';
+
 function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
+
+// Authentication
+app.post('/api/auth/verify', (req, res) => {
+  const { password } = req.body;
+  if (password === PASSWORD) {
+    res.json({ authenticated: true });
+  } else {
+    res.status(401).json({ error: '비밀번호가 틀렸습니다' });
+  }
+});
 
 // Departments, in display order (used to group the name picker).
 app.get('/api/departments', (req, res) => {

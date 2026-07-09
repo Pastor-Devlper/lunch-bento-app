@@ -6,13 +6,18 @@ import MyStatus from './components/MyStatus.jsx';
 import Settings from './components/Settings.jsx';
 import Footer from './components/Footer.jsx';
 import NamePicker from './components/NamePicker.jsx';
+import AuthScreen from './components/AuthScreen.jsx';
 import { fetchPeople, fetchDepartments, addPerson, deletePerson, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
 import { todayISO, formatKoreanDate, formatTime } from './dateUtils.js';
 
 const IDENTITY_KEY = 'lunchbento.personId';
+const AUTH_KEY = 'authenticated';
 const POLL_MS = 10000;
 
 export default function App() {
+  const [authenticated, setAuthenticated] = useState(() => {
+    return localStorage.getItem(AUTH_KEY) === 'true';
+  });
   const [people, setPeople] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [personId, setPersonId] = useState(() => {
@@ -104,6 +109,10 @@ export default function App() {
         handleSwitchUser();
       })
       .catch(() => alert('삭제하지 못했어요'));
+  }
+
+  if (!authenticated) {
+    return <AuthScreen onAuthenticated={() => setAuthenticated(true)} />;
   }
 
   if (personId == null) {
