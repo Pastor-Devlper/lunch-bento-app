@@ -41,6 +41,18 @@ app.post('/api/people', (req, res) => {
   res.status(201).json({ id: result.lastInsertRowid, name, department });
 });
 
+// Delete a person
+app.delete('/api/people/:personId', (req, res) => {
+  const personId = Number(req.params.personId);
+  const person = db.prepare('SELECT id FROM people WHERE id = ?').get(personId);
+  if (!person) {
+    return res.status(404).json({ error: 'unknown person' });
+  }
+  db.prepare('DELETE FROM responses WHERE person_id = ?').run(personId);
+  db.prepare('DELETE FROM people WHERE id = ?').run(personId);
+  res.json({ success: true });
+});
+
 // Everyone's attendance/meal status for a given date.
 app.get('/api/day', (req, res) => {
   const { date } = req.query;

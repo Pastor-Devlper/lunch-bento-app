@@ -6,7 +6,7 @@ import MyStatus from './components/MyStatus.jsx';
 import Settings from './components/Settings.jsx';
 import Footer from './components/Footer.jsx';
 import NamePicker from './components/NamePicker.jsx';
-import { fetchPeople, fetchDepartments, addPerson, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
+import { fetchPeople, fetchDepartments, addPerson, deletePerson, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
 import { todayISO, formatKoreanDate, formatTime } from './dateUtils.js';
 
 const IDENTITY_KEY = 'lunchbento.personId';
@@ -97,6 +97,15 @@ export default function App() {
     putSettings(personId, { reminderEnabled: next }).catch(() => setReminderEnabled(!next));
   }
 
+  function handleDeleteUser() {
+    deletePerson(personId)
+      .then(() => {
+        setPeople((prev) => prev.filter((p) => p.id !== personId));
+        handleSwitchUser();
+      })
+      .catch(() => alert('삭제하지 못했어요'));
+  }
+
   if (personId == null) {
     return (
       <div className="app-container">
@@ -151,7 +160,7 @@ export default function App() {
         onSetMeal={handleSetMeal}
       />
 
-      <Settings reminderEnabled={reminderEnabled} onToggle={handleToggleReminder} />
+      <Settings reminderEnabled={reminderEnabled} onToggle={handleToggleReminder} onDelete={handleDeleteUser} />
 
       <Footer lastUpdated={lastUpdated} />
     </div>

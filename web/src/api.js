@@ -27,6 +27,12 @@ export function addPerson({ name, department }) {
   });
 }
 
+export function deletePerson(personId) {
+  return request(`/people/${personId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function fetchDay(date) {
   return request(`/day?${new URLSearchParams({ date })}`);
 }

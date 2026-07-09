@@ -1,4 +1,10 @@
-export default function Settings({ reminderEnabled, onToggle }) {
+export default function Settings({ reminderEnabled, onToggle, onDelete }) {
+  function handleDelete() {
+    if (confirm('정말 이 명단에서 삭제하시겠어요?')) {
+      onDelete();
+    }
+  }
+
   return (
     <div className="settings-section">
       <div className="settings-title">⚙️ 알림 설정</div>
@@ -12,6 +18,16 @@ export default function Settings({ reminderEnabled, onToggle }) {
           aria-label="화요일 아침 8시 리마인더"
         >
           <div className="toggle-circle"></div>
+        </button>
+      </div>
+      <div className="setting-item">
+        <span className="setting-label">명단에서 삭제</span>
+        <button
+          type="button"
+          className="delete-btn"
+          onClick={handleDelete}
+        >
+          삭제
         </button>
       </div>
     </div>
