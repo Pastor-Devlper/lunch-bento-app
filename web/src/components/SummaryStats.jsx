@@ -9,14 +9,22 @@ export default function SummaryStats({ attendingCount, absentCount, pendingCount
         <div className="stat-number">{attendingCount}</div>
         <div className="stat-label">참석</div>
       </button>
-      <div className="stat-card stat-absent">
+      <button
+        type="button"
+        className="stat-card stat-absent"
+        onClick={() => onTabChange('absent')}
+      >
         <div className="stat-number">{absentCount}</div>
         <div className="stat-label">미참석</div>
-      </div>
-      <div className="stat-card stat-pending">
+      </button>
+      <button
+        type="button"
+        className="stat-card stat-pending"
+        onClick={() => onTabChange('pending')}
+      >
         <div className="stat-number">{pendingCount}</div>
         <div className="stat-label">미응답</div>
-      </div>
+      </button>
       <button
         type="button"
         className="stat-card stat-eating"

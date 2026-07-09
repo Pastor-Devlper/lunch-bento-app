@@ -166,6 +166,8 @@ export default function App() {
 
       <StatusGrid
         attendingPeople={attendingPeople}
+        absentPeople={absentPeople}
+        pendingPeople={pendingPeople}
         eatingPeople={eatingPeople}
         selectedTab={selectedTab}
         myPersonId={personId}

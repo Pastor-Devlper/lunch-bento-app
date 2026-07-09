@@ -1,6 +1,8 @@
-export default function StatusGrid({ attendingPeople, eatingPeople, selectedTab, myPersonId }) {
+export default function StatusGrid({ attendingPeople, absentPeople, pendingPeople, eatingPeople, selectedTab, myPersonId }) {
   const tabs = [
     { id: 'attending', icon: '✓', title: '참석', people: attendingPeople, emptyText: '아직 참석자가 없어요' },
+    { id: 'absent', icon: '✗', title: '미참석', people: absentPeople, emptyText: '아직 없어요' },
+    { id: 'pending', icon: '?', title: '미응답', people: pendingPeople, emptyText: '모두 응답했어요 🎉' },
     { id: 'eating', icon: '🍽️', title: '식사', people: eatingPeople, emptyText: '아직 없어요' },
   ];
 
