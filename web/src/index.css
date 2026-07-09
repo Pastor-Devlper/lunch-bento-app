@@ -408,8 +408,8 @@ button {
 }
 
 .picker-department-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
@@ -532,6 +532,10 @@ button {
 
   .summary-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .picker-department-list {
+    grid-template-columns: 1fr;
   }
 }
 
