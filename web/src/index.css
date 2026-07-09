@@ -86,7 +86,7 @@ button {
 /* Summary Stats */
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 40px;
 }
@@ -125,7 +125,7 @@ button {
 /* Status Grid */
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 40px;
 }
@@ -524,14 +524,6 @@ button {
 
   .header-title {
     font-size: 32px;
-  }
-
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .summary-stats {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
