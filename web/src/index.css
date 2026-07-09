@@ -456,12 +456,13 @@ button {
 }
 
 .picker-department-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .picker-btn {
+  flex: 0 0 calc((100% - 16px) / 3);
   padding: 14px 16px;
   background: #f8f9fa;
   border: 2px solid transparent;
@@ -472,6 +473,7 @@ button {
   transition: all 0.2s ease;
   color: #333;
   text-align: center;
+  min-width: 0;
 }
 
 .picker-btn:hover {
@@ -480,6 +482,7 @@ button {
 }
 
 .picker-add-btn {
+  flex: 0 0 calc((100% - 16px) / 3);
   padding: 10px 16px;
   background: transparent;
   border: 2px dashed #ddd;
@@ -490,6 +493,7 @@ button {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  min-width: 0;
 }
 
 .picker-add-btn:hover {
@@ -499,12 +503,12 @@ button {
 }
 
 .picker-add-form {
+  flex: 0 0 calc((100% - 16px) / 3);
   display: grid;
-  grid-column: 1 / -1;
   grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  gap: 4px;
   padding: 0;
-  width: 100%;
+  min-width: 0;
 }
 
 .picker-add-input {
