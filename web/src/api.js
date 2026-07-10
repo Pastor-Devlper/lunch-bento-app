@@ -1,4 +1,4 @@
-const BASE = 'https://lunch-bento-server.onrender.com/api';
+const BASE = import.meta.env.VITE_API_BASE || 'https://lunch-bento-server.onrender.com/api';
 
 async function request(path, options) {
   const res = await fetch(`${BASE}${path}`, {
@@ -10,6 +10,14 @@ async function request(path, options) {
     throw new Error(body.error || `Request failed: ${res.status}`);
   }
   return res.json();
+}
+
+export function verifyPassword(password) {
+  return fetch(`${BASE}/auth/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
 }
 
 export function fetchDepartments() {
@@ -33,14 +41,31 @@ export function deletePerson(personId) {
   });
 }
 
-export function fetchDay(date) {
-  return request(`/day?${new URLSearchParams({ date })}`);
+export function fetchEvents() {
+  return request('/events');
 }
 
-export function putDay(personId, { date, attending, meal }) {
-  return request(`/day/${personId}`, {
+export function createEvent({ title, eventDate, description, createdBy, menuEnabled, mealEnabled }) {
+  return request('/events', {
+    method: 'POST',
+    body: JSON.stringify({ title, eventDate, description, createdBy, menuEnabled, mealEnabled }),
+  });
+}
+
+export function deleteEvent(eventId) {
+  return request(`/events/${eventId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function fetchEventResponses(eventId) {
+  return request(`/events/${eventId}/responses`);
+}
+
+export function putEventResponse(eventId, personId, { attending, note, menuOption, meal }) {
+  return request(`/events/${eventId}/responses/${personId}`, {
     method: 'PUT',
-    body: JSON.stringify({ date, attending, meal }),
+    body: JSON.stringify({ attending, note, menuOption, meal }),
   });
 }
 

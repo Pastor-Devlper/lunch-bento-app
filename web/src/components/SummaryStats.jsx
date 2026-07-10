@@ -1,4 +1,4 @@
-export default function SummaryStats({ attendingCount, absentCount, pendingCount, eatingCount, onTabChange }) {
+export default function SummaryStats({ attendingCount, absentCount, pendingCount, onTabChange }) {
   return (
     <div className="summary-stats">
       <button
@@ -24,14 +24,6 @@ export default function SummaryStats({ attendingCount, absentCount, pendingCount
       >
         <div className="stat-number">{pendingCount}</div>
         <div className="stat-label">미응답</div>
-      </button>
-      <button
-        type="button"
-        className="stat-card stat-eating"
-        onClick={() => onTabChange('eating')}
-      >
-        <div className="stat-number">{eatingCount}</div>
-        <div className="stat-label">식사</div>
       </button>
     </div>
   );

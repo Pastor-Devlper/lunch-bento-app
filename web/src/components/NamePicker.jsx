@@ -48,7 +48,7 @@ export default function NamePicker({ people, departments, onSelect, onAdd, error
 
   return (
     <div className="picker-container">
-      <div className="picker-title">🍱 화요일 도시락</div>
+      <div className="picker-title">📋 이벤트 참석 현황</div>
       <div className="picker-subtitle">본인 이름을 선택해주세요</div>
 
       {departments.map((department) => {

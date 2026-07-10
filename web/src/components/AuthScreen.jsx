@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { verifyPassword } from '../api.js';
 
 export default function AuthScreen({ onAuthenticated }) {
   const [password, setPassword] = useState('');
@@ -11,11 +12,7 @@ export default function AuthScreen({ onAuthenticated }) {
     setLoading(true);
 
     try {
-      const res = await fetch('https://lunch-bento-server.onrender.com/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
+      const res = await verifyPassword(password);
 
       if (res.ok) {
         localStorage.setItem('authenticated', 'true');
@@ -36,7 +33,7 @@ export default function AuthScreen({ onAuthenticated }) {
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h1 className="auth-title">🍱 화요일 도시락</h1>
+        <h1 className="auth-title">📋 이벤트 참석 현황</h1>
         <p className="auth-subtitle">비밀번호를 입력하세요</p>
 
         <form onSubmit={handleSubmit}>

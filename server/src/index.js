@@ -65,36 +65,116 @@ app.delete('/api/people/:personId', (req, res) => {
   res.json({ success: true });
 });
 
-// Everyone's attendance/meal status for a given date.
-app.get('/api/day', (req, res) => {
-  const { date } = req.query;
-  if (!isValidDate(date)) {
-    return res.status(400).json({ error: 'date query param must be YYYY-MM-DD' });
+// All events, with attendance/absence/pending counts across the current roster.
+app.get('/api/events', (req, res) => {
+  const totalPeople = db.prepare('SELECT COUNT(*) AS c FROM people').get().c;
+  const events = db.prepare(`
+    SELECT e.id AS id, e.title AS title, e.event_date AS eventDate, e.description AS description,
+           e.created_at AS createdAt, e.menu_enabled AS menuEnabled, e.meal_enabled AS mealEnabled,
+           p.name AS createdByName,
+           SUM(CASE WHEN r.attending = 1 THEN 1 ELSE 0 END) AS attendingCount,
+           SUM(CASE WHEN r.attending = 0 THEN 1 ELSE 0 END) AS absentCount
+    FROM events e
+    LEFT JOIN people p ON p.id = e.created_by
+    LEFT JOIN event_responses r ON r.event_id = e.id
+    GROUP BY e.id
+    ORDER BY e.event_date DESC, e.id DESC
+  `).all();
+
+  res.json(events.map((e) => ({
+    ...e,
+    menuEnabled: Boolean(e.menuEnabled),
+    mealEnabled: Boolean(e.mealEnabled),
+    attendingCount: e.attendingCount || 0,
+    absentCount: e.absentCount || 0,
+    pendingCount: totalPeople - (e.attendingCount || 0) - (e.absentCount || 0),
+  })));
+});
+
+// Create a new event.
+app.post('/api/events', (req, res) => {
+  const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+  const { eventDate, description, menuEnabled, mealEnabled } = req.body;
+  const createdBy = Number(req.body.createdBy);
+
+  if (!title) {
+    return res.status(400).json({ error: '이벤트 이름을 입력해주세요' });
+  }
+  if (eventDate != null && !isValidDate(eventDate)) {
+    return res.status(400).json({ error: 'eventDate must be YYYY-MM-DD or null' });
+  }
+  const person = db.prepare('SELECT id FROM people WHERE id = ?').get(createdBy);
+  if (!person) {
+    return res.status(400).json({ error: 'unknown createdBy person' });
+  }
+
+  const now = new Date().toISOString();
+  const result = db.prepare(`
+    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(title, eventDate || null, description || null, createdBy, now, menuEnabled ? 1 : 0, mealEnabled ? 1 : 0);
+
+  res.status(201).json({
+    id: result.lastInsertRowid,
+    title,
+    eventDate: eventDate || null,
+    description: description || null,
+    createdAt: now,
+    menuEnabled: Boolean(menuEnabled),
+    mealEnabled: Boolean(mealEnabled),
+    attendingCount: 0,
+    absentCount: 0,
+    pendingCount: db.prepare('SELECT COUNT(*) AS c FROM people').get().c,
+  });
+});
+
+// Delete an event.
+app.delete('/api/events/:eventId', (req, res) => {
+  const eventId = Number(req.params.eventId);
+  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
+  if (!event) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
+  res.json({ success: true });
+});
+
+// Everyone's attendance/note status for a given event.
+app.get('/api/events/:eventId/responses', (req, res) => {
+  const eventId = Number(req.params.eventId);
+  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
+  if (!event) {
+    return res.status(404).json({ error: 'unknown event' });
   }
   const rows = db.prepare(`
-    SELECT p.id AS personId, p.name AS name, r.attending AS attending, r.meal AS meal
+    SELECT p.id AS personId, p.name AS name, r.attending AS attending, r.note AS note,
+           r.menu_option AS menuOption, r.meal AS meal
     FROM people p
-    LEFT JOIN responses r ON r.person_id = p.id AND r.date = ?
+    LEFT JOIN event_responses r ON r.person_id = p.id AND r.event_id = ?
     ORDER BY p.id
-  `).all(date);
+  `).all(eventId);
 
   const people = rows.map((row) => ({
     personId: row.personId,
     name: row.name,
     attending: row.attending === null ? null : Boolean(row.attending),
+    note: row.note,
+    menuOption: row.menuOption,
     meal: row.meal,
   }));
 
   res.json(people);
 });
 
-// Upsert one person's attendance/meal for a given date.
-app.put('/api/day/:personId', (req, res) => {
+// Upsert one person's attendance/note/menu choice/meal status for a given event.
+app.put('/api/events/:eventId/responses/:personId', (req, res) => {
+  const eventId = Number(req.params.eventId);
   const personId = Number(req.params.personId);
-  const { date, attending, meal } = req.body;
+  const { attending, note, menuOption, meal } = req.body;
 
-  if (!isValidDate(date)) {
-    return res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
+  if (!event) {
+    return res.status(404).json({ error: 'unknown event' });
   }
   const person = db.prepare('SELECT id FROM people WHERE id = ?').get(personId);
   if (!person) {
@@ -103,23 +183,36 @@ app.put('/api/day/:personId', (req, res) => {
   if (attending !== null && typeof attending !== 'boolean') {
     return res.status(400).json({ error: 'attending must be boolean or null' });
   }
-  if (meal !== null && meal !== '먹음' && meal !== '안먹음') {
+  if (note !== null && note !== undefined && typeof note !== 'string') {
+    return res.status(400).json({ error: 'note must be a string or null' });
+  }
+  if (menuOption !== null && menuOption !== undefined && typeof menuOption !== 'string') {
+    return res.status(400).json({ error: 'menuOption must be a string or null' });
+  }
+  if (meal !== null && meal !== undefined && meal !== '먹음' && meal !== '안먹음') {
     return res.status(400).json({ error: "meal must be '먹음', '안먹음', or null" });
   }
 
   const attendingValue = attending === null ? null : (attending ? 1 : 0);
+  const noteValue = note || null;
+  const menuOptionValue = (menuOption || '').trim() || null;
+  const mealValue = meal || null;
   const now = new Date().toISOString();
 
   db.prepare(`
-    INSERT INTO responses (person_id, date, attending, meal, updated_at)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(person_id, date) DO UPDATE SET
+    INSERT INTO event_responses (event_id, person_id, attending, note, menu_option, meal, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(event_id, person_id) DO UPDATE SET
       attending = excluded.attending,
+      note = excluded.note,
+      menu_option = excluded.menu_option,
       meal = excluded.meal,
       updated_at = excluded.updated_at
-  `).run(personId, date, attendingValue, meal, now);
+  `).run(eventId, personId, attendingValue, noteValue, menuOptionValue, mealValue, now);
 
-  res.json({ personId, date, attending, meal, updatedAt: now });
+  res.json({
+    eventId, personId, attending, note: noteValue, menuOption: menuOptionValue, meal: mealValue, updatedAt: now,
+  });
 });
 
 // Per-person reminder preference.

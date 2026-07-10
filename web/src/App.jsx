@@ -7,8 +7,13 @@ import Settings from './components/Settings.jsx';
 import Footer from './components/Footer.jsx';
 import NamePicker from './components/NamePicker.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
-import { fetchPeople, fetchDepartments, addPerson, deletePerson, fetchDay, putDay, fetchSettings, putSettings } from './api.js';
-import { todayISO, formatKoreanDate, formatTime } from './dateUtils.js';
+import EventList from './components/EventList.jsx';
+import {
+  fetchPeople, fetchDepartments, addPerson, deletePerson,
+  fetchEvents, createEvent, deleteEvent, fetchEventResponses, putEventResponse,
+  fetchSettings, putSettings,
+} from './api.js';
+import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
 
 const IDENTITY_KEY = 'lunchbento.personId';
 const AUTH_KEY = 'authenticated';
@@ -24,26 +29,24 @@ export default function App() {
     const stored = localStorage.getItem(IDENTITY_KEY);
     return stored ? Number(stored) : null;
   });
-  const [day, setDay] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [eventError, setEventError] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [responses, setResponses] = useState([]);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [pickerError, setPickerError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('attending');
 
-  const date = todayISO();
-
   useEffect(() => {
     fetchPeople().then(setPeople).catch(() => setPickerError('명단을 불러오지 못했어요. 새로고침해주세요.'));
     fetchDepartments().then(setDepartments).catch(() => {});
   }, []);
 
-  const refreshDay = useCallback(() => {
-    return fetchDay(date).then((rows) => {
-      setDay(rows);
-      setLastUpdated(formatTime(new Date()));
-    });
-  }, [date]);
+  const refreshEvents = useCallback(() => {
+    return fetchEvents().then(setEvents).catch(() => setEventError('이벤트 목록을 불러오지 못했어요.'));
+  }, []);
 
   useEffect(() => {
     if (personId == null) {
@@ -51,12 +54,26 @@ export default function App() {
       return;
     }
     setLoading(true);
-    Promise.all([refreshDay(), fetchSettings(personId).then((s) => setReminderEnabled(s.reminderEnabled))])
+    Promise.all([refreshEvents(), fetchSettings(personId).then((s) => setReminderEnabled(s.reminderEnabled))])
       .finally(() => setLoading(false));
+  }, [personId, refreshEvents]);
 
-    const interval = setInterval(refreshDay, POLL_MS);
+  const refreshResponses = useCallback(() => {
+    if (selectedEventId == null) return Promise.resolve();
+    return fetchEventResponses(selectedEventId).then((rows) => {
+      setResponses(rows);
+      setLastUpdated(formatTime(new Date()));
+    });
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    if (selectedEventId == null) return;
+    setSelectedTab('attending');
+    refreshResponses();
+
+    const interval = setInterval(refreshResponses, POLL_MS);
     return () => clearInterval(interval);
-  }, [personId, refreshDay]);
+  }, [selectedEventId, refreshResponses]);
 
   function handleSelectPerson(id) {
     localStorage.setItem(IDENTITY_KEY, String(id));
@@ -74,26 +91,69 @@ export default function App() {
   function handleSwitchUser() {
     localStorage.removeItem(IDENTITY_KEY);
     setPersonId(null);
-    setDay([]);
+    setEvents([]);
+    setSelectedEventId(null);
+    setResponses([]);
   }
 
-  const me = day.find((p) => p.personId === personId);
+  function handleSelectEvent(eventId) {
+    setSelectedEventId(eventId);
+  }
+
+  function handleBackToList() {
+    setSelectedEventId(null);
+    setResponses([]);
+    refreshEvents();
+  }
+
+  function handleCreateEvent({ title, eventDate, description, menuEnabled, mealEnabled }) {
+    return createEvent({ title, eventDate, description, createdBy: personId, menuEnabled, mealEnabled }).then((event) => {
+      setEvents((prev) => [event, ...prev]);
+      return event;
+    });
+  }
+
+  function handleDeleteEvent(eventId) {
+    deleteEvent(eventId)
+      .then(() => {
+        setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      })
+      .catch(() => setEventError('이벤트를 삭제하지 못했어요'));
+  }
+
+  const me = responses.find((p) => p.personId === personId);
   const myAttending = me?.attending ?? null;
+  const myNote = me?.note ?? null;
+  const myOption = me?.menuOption ?? null;
   const myMeal = me?.meal ?? null;
+  const menuOptions = [...new Set(responses.map((p) => p.menuOption).filter(Boolean))];
 
   function handleSetAttending(attending) {
-    const meal = attending ? (myMeal || '먹음') : null;
-    setDay((prev) => prev.map((p) => (p.personId === personId ? { ...p, attending, meal } : p)));
-    putDay(personId, { date, attending, meal })
-      .then(() => refreshDay())
-      .catch(() => refreshDay());
+    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, attending } : p)));
+    putEventResponse(selectedEventId, personId, { attending, note: myNote, menuOption: myOption, meal: myMeal })
+      .then(() => refreshResponses())
+      .catch(() => refreshResponses());
+  }
+
+  function handleSetNote(note) {
+    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, note } : p)));
+    putEventResponse(selectedEventId, personId, { attending: myAttending, note, menuOption: myOption, meal: myMeal })
+      .then(() => refreshResponses())
+      .catch(() => refreshResponses());
+  }
+
+  function handleSetOption(menuOption) {
+    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, menuOption } : p)));
+    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOption, meal: myMeal })
+      .then(() => refreshResponses())
+      .catch(() => refreshResponses());
   }
 
   function handleSetMeal(meal) {
-    setDay((prev) => prev.map((p) => (p.personId === personId ? { ...p, meal } : p)));
-    putDay(personId, { date, attending: true, meal })
-      .then(() => refreshDay())
-      .catch(() => refreshDay());
+    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, meal } : p)));
+    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOption: myOption, meal })
+      .then(() => refreshResponses())
+      .catch(() => refreshResponses());
   }
 
   function handleToggleReminder() {
@@ -133,26 +193,52 @@ export default function App() {
     return (
       <div className="app-container">
         <div className="header">
-          <h1 className="header-title">🍱 화요일 도시락</h1>
+          <h1 className="header-title">📋 이벤트 참석 현황</h1>
         </div>
       </div>
     );
   }
 
-  const attendingPeople = day.filter((p) => p.attending === true);
-  const absentPeople = day.filter((p) => p.attending === false);
-  const pendingPeople = day.filter((p) => p.attending === null);
-  const eatingPeople = day.filter((p) => p.meal === '먹음');
-  const eatingCount = eatingPeople.length;
+  if (selectedEventId == null) {
+    return (
+      <div className="app-container">
+        <EventList
+          events={events}
+          onSelect={handleSelectEvent}
+          onCreate={handleCreateEvent}
+          onDelete={handleDeleteEvent}
+          error={eventError}
+        />
+      </div>
+    );
+  }
+
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
+  const attendingPeople = responses.filter((p) => p.attending === true);
+  const absentPeople = responses.filter((p) => p.attending === false);
+  const pendingPeople = responses.filter((p) => p.attending === null);
 
   return (
     <div className="app-container">
-      <Header dateStr={formatKoreanDate()} myName={me?.name} onSwitchUser={handleSwitchUser} />
+      <Header
+        eventTitle={selectedEvent?.title || '이벤트'}
+        eventDateStr={formatKoreanDateFromISO(selectedEvent?.eventDate)}
+        myName={me?.name}
+        onSwitchUser={handleSwitchUser}
+        onBackToList={handleBackToList}
+      />
 
       <MyStatus
         myAttending={myAttending}
+        myNote={myNote}
+        myOption={myOption}
         myMeal={myMeal}
+        menuEnabled={Boolean(selectedEvent?.menuEnabled)}
+        menuOptions={menuOptions}
+        mealEnabled={Boolean(selectedEvent?.mealEnabled)}
         onSetAttending={handleSetAttending}
+        onSetNote={handleSetNote}
+        onSetOption={handleSetOption}
         onSetMeal={handleSetMeal}
       />
 
@@ -160,7 +246,6 @@ export default function App() {
         attendingCount={attendingPeople.length}
         absentCount={absentPeople.length}
         pendingCount={pendingPeople.length}
-        eatingCount={eatingCount}
         onTabChange={setSelectedTab}
       />
 
@@ -168,7 +253,6 @@ export default function App() {
         attendingPeople={attendingPeople}
         absentPeople={absentPeople}
         pendingPeople={pendingPeople}
-        eatingPeople={eatingPeople}
         selectedTab={selectedTab}
         myPersonId={personId}
       />

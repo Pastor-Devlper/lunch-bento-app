@@ -31,6 +31,26 @@ button {
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
+  position: relative;
+}
+
+.back-to-list-btn {
+  position: absolute;
+  left: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4ECDC4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-to-list-btn:hover {
+  background: #E8F8F5;
+  border-color: #4ECDC4;
 }
 
 .header-info-row {
@@ -92,21 +112,10 @@ button {
   justify-content: flex-end;
 }
 
-.deadline-box {
-  display: inline-block;
-  background: linear-gradient(135deg, #FFE66D, #FFD93D);
-  color: #333;
-  padding: 12px 24px;
-  border-radius: 24px;
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 4px 15px rgba(255, 211, 61, 0.3);
-}
-
 /* Summary Stats */
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 40px;
 }
@@ -143,7 +152,6 @@ button {
 .stat-attending .stat-number { color: #4ECDC4; }
 .stat-absent .stat-number { color: #FF6B6B; }
 .stat-pending .stat-number { color: #A0AEC0; }
-.stat-eating .stat-number { color: #FFA500; }
 
 /* Status Grid */
 .status-grid {
@@ -191,12 +199,6 @@ button {
   color: #FF6B6B;
 }
 
-.status-eating .status-header {
-  background: #FFF4E6;
-  border-bottom-color: #FFA500;
-  color: #FFA500;
-}
-
 .status-pending .status-header {
   background: #F7F9FC;
   border-bottom-color: #A0AEC0;
@@ -232,6 +234,27 @@ button {
   gap: 12px;
 }
 
+.menu-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.menu-tally-item {
+  padding: 6px 12px;
+  background: #E8F8F5;
+  color: #2ea89a;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meal-tally-item {
+  background: #FFF4E6;
+  color: #cc7a00;
+}
+
 .empty-hint {
   padding: 12px 16px;
   color: #aaa;
@@ -254,7 +277,7 @@ button {
   border-color: #4ECDC4;
 }
 
-.meal-status {
+.note-status {
   font-size: 12px;
   color: #666;
   margin-top: 4px;
@@ -424,6 +447,101 @@ button {
   border-color: white;
 }
 
+.menu-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.menu-option-btn {
+  padding: 10px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.menu-option-btn.selected {
+  background: white;
+  color: #667eea;
+  border-color: white;
+}
+
+.menu-option-btn:hover {
+  border-color: white;
+}
+
+.menu-add-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.menu-add-input {
+  padding: 10px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.menu-add-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.menu-add-input:focus {
+  border-color: white;
+}
+
+.menu-add-btn {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid white;
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-add-btn:hover {
+  background: white;
+  color: #667eea;
+}
+
+.note-input {
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.note-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.note-input:focus {
+  border-color: white;
+}
+
 /* Footer */
 .footer {
   text-align: center;
@@ -574,6 +692,153 @@ button {
   color: #FF6B6B;
   font-size: 13px;
   margin-top: 16px;
+}
+
+/* Event list */
+.event-list-container {
+  max-width: 560px;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.event-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 44px 16px 16px;
+  background: #f8f9fa;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.event-card:hover {
+  background: #E8F8F5;
+  border-color: #4ECDC4;
+}
+
+.event-card-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.event-card-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #333;
+}
+
+.event-card-date {
+  font-size: 12px;
+  color: #999;
+}
+
+.event-card-counts {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.event-card-count-attending { color: #4ECDC4; }
+.event-card-count-absent { color: #FF6B6B; }
+.event-card-count-pending { color: #A0AEC0; }
+
+.event-card-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-card-delete:hover {
+  background: #FFE8E8;
+  color: #FF6B6B;
+}
+
+.event-new-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  color: #999;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-new-btn:hover {
+  border-color: #4ECDC4;
+  color: #4ECDC4;
+  background: #E8F8F5;
+}
+
+.event-new-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-new-input {
+  padding: 12px 14px;
+  border: 2px solid #4ECDC4;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+}
+
+.event-new-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.event-new-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.event-new-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.event-new-actions .picker-add-confirm,
+.event-new-actions .picker-add-cancel {
+  flex: 1;
+  padding: 12px 14px;
 }
 
 /* Authentication Screen */

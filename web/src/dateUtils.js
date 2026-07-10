@@ -12,3 +12,9 @@ export function formatKoreanDate(date = new Date()) {
 export function formatTime(date = new Date()) {
   return date.toLocaleTimeString('ko-KR');
 }
+
+export function formatKoreanDateFromISO(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${y}년 ${m}월 ${d}일`;
+}

@@ -1,11 +1,16 @@
-export default function Header({ dateStr, myName, onSwitchUser }) {
+export default function Header({ eventTitle, eventDateStr, myName, onSwitchUser, onBackToList }) {
   return (
     <div className="header">
       <div className="header-top">
-        <h1 className="header-title">🍱 화요일 도시락</h1>
+        {onBackToList && (
+          <button type="button" className="back-to-list-btn" onClick={onBackToList}>
+            ← 목록
+          </button>
+        )}
+        <h1 className="header-title">{eventTitle}</h1>
       </div>
       <div className="header-info-row">
-        <div className="header-date">{dateStr}</div>
+        <div className="header-date">{eventDateStr}</div>
         {myName && (
           <div className="header-user-badge">
             {myName}님
@@ -15,7 +20,6 @@ export default function Header({ dateStr, myName, onSwitchUser }) {
           </div>
         )}
       </div>
-      <div className="deadline-box">⏰ 마감: 오늘 오후 5시</div>
     </div>
   );
 }
