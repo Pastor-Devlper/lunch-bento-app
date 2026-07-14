@@ -1,4 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+const LONG_PRESS_MS = 2000;
+
+function MenuOptionPill({ option, selected, onToggle, onRemove }) {
+  const [revealed, setRevealed] = useState(false);
+  const timerRef = useRef(null);
+  const longPressedRef = useRef(false);
+
+  function startPress() {
+    longPressedRef.current = false;
+    timerRef.current = setTimeout(() => {
+      longPressedRef.current = true;
+      setRevealed(true);
+    }, LONG_PRESS_MS);
+  }
+
+  function cancelPress() {
+    clearTimeout(timerRef.current);
+  }
+
+  function handleClick() {
+    if (longPressedRef.current) {
+      longPressedRef.current = false;
+      return;
+    }
+    if (revealed) {
+      setRevealed(false);
+      return;
+    }
+    onToggle();
+  }
+
+  function handleRemove() {
+    if (confirm(`'${option}' 메뉴를 삭제할까요?`)) {
+      onRemove();
+    }
+    setRevealed(false);
+  }
+
+  return (
+    <span className="menu-option-wrap">
+      <button
+        type="button"
+        className={`menu-option-btn${selected ? ' selected' : ''}`}
+        onPointerDown={startPress}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
+        onClick={handleClick}
+      >
+        {option}
+      </button>
+      {revealed && (
+        <button
+          type="button"
+          className="menu-option-delete"
+          onClick={handleRemove}
+          aria-label={`${option} 삭제`}
+        >
+          ×
+        </button>
+      )}
+    </span>
+  );
+}
 
 function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAddOption, onRemoveOption }) {
   const [newOption, setNewOption] = useState('');
@@ -11,12 +76,6 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
     setNewOption('');
   }
 
-  function handleRemove(option) {
-    if (confirm(`'${option}' 메뉴를 삭제할까요?`)) {
-      onRemoveOption(option);
-    }
-  }
-
   return (
     <div>
       <div className="my-status-title my-status-subtitle">
@@ -25,23 +84,13 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
       {menuOptions.length > 0 && (
         <div className="menu-options">
           {menuOptions.map((option) => (
-            <span key={option} className="menu-option-wrap">
-              <button
-                type="button"
-                className={`menu-option-btn${myOptions.includes(option) ? ' selected' : ''}`}
-                onClick={() => onToggleOption(option)}
-              >
-                {option}
-              </button>
-              <button
-                type="button"
-                className="menu-option-delete"
-                onClick={() => handleRemove(option)}
-                aria-label={`${option} 삭제`}
-              >
-                ×
-              </button>
-            </span>
+            <MenuOptionPill
+              key={option}
+              option={option}
+              selected={myOptions.includes(option)}
+              onToggle={() => onToggleOption(option)}
+              onRemove={() => onRemoveOption(option)}
+            />
           ))}
         </div>
       )}
