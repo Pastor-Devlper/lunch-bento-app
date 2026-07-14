@@ -62,10 +62,10 @@ export function fetchEventResponses(eventId) {
   return request(`/events/${eventId}/responses`);
 }
 
-export function putEventResponse(eventId, personId, { attending, note, menuOption, meal }) {
+export function putEventResponse(eventId, personId, { attending, note, menuOptions, meal }) {
   return request(`/events/${eventId}/responses/${personId}`, {
     method: 'PUT',
-    body: JSON.stringify({ attending, note, menuOption, meal }),
+    body: JSON.stringify({ attending, note, menuOptions, meal }),
   });
 }
 

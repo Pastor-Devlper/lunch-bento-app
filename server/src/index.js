@@ -12,6 +12,17 @@ function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
 
+// menu_option is stored as a JSON array string; older rows may hold a plain string.
+function parseMenuOptions(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [String(parsed)];
+  } catch {
+    return [raw];
+  }
+}
+
 // Authentication
 app.post('/api/auth/verify', (req, res) => {
   const { password } = req.body;
@@ -159,18 +170,18 @@ app.get('/api/events/:eventId/responses', (req, res) => {
     name: row.name,
     attending: row.attending === null ? null : Boolean(row.attending),
     note: row.note,
-    menuOption: row.menuOption,
+    menuOptions: parseMenuOptions(row.menuOption),
     meal: row.meal,
   }));
 
   res.json(people);
 });
 
-// Upsert one person's attendance/note/menu choice/meal status for a given event.
+// Upsert one person's attendance/note/menu choices/meal status for a given event.
 app.put('/api/events/:eventId/responses/:personId', (req, res) => {
   const eventId = Number(req.params.eventId);
   const personId = Number(req.params.personId);
-  const { attending, note, menuOption, meal } = req.body;
+  const { attending, note, menuOptions, meal } = req.body;
 
   const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
   if (!event) {
@@ -186,8 +197,9 @@ app.put('/api/events/:eventId/responses/:personId', (req, res) => {
   if (note !== null && note !== undefined && typeof note !== 'string') {
     return res.status(400).json({ error: 'note must be a string or null' });
   }
-  if (menuOption !== null && menuOption !== undefined && typeof menuOption !== 'string') {
-    return res.status(400).json({ error: 'menuOption must be a string or null' });
+  if (menuOptions !== null && menuOptions !== undefined
+    && (!Array.isArray(menuOptions) || !menuOptions.every((o) => typeof o === 'string'))) {
+    return res.status(400).json({ error: 'menuOptions must be an array of strings or null' });
   }
   if (meal !== null && meal !== undefined && meal !== '먹음' && meal !== '안먹음') {
     return res.status(400).json({ error: "meal must be '먹음', '안먹음', or null" });
@@ -195,7 +207,8 @@ app.put('/api/events/:eventId/responses/:personId', (req, res) => {
 
   const attendingValue = attending === null ? null : (attending ? 1 : 0);
   const noteValue = note || null;
-  const menuOptionValue = (menuOption || '').trim() || null;
+  const cleanOptions = (menuOptions || []).map((o) => o.trim()).filter(Boolean);
+  const menuOptionValue = cleanOptions.length > 0 ? JSON.stringify(cleanOptions) : null;
   const mealValue = meal || null;
   const now = new Date().toISOString();
 
@@ -211,7 +224,7 @@ app.put('/api/events/:eventId/responses/:personId', (req, res) => {
   `).run(eventId, personId, attendingValue, noteValue, menuOptionValue, mealValue, now);
 
   res.json({
-    eventId, personId, attending, note: noteValue, menuOption: menuOptionValue, meal: mealValue, updatedAt: now,
+    eventId, personId, attending, note: noteValue, menuOptions: cleanOptions, meal: mealValue, updatedAt: now,
   });
 });
 

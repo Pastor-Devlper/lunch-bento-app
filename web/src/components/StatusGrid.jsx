@@ -8,8 +8,9 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
   const currentTab = tabs.find((t) => t.id === selectedTab) || tabs[0];
 
   const menuTally = attendingPeople.reduce((acc, p) => {
-    if (!p.menuOption) return acc;
-    acc[p.menuOption] = (acc[p.menuOption] || 0) + 1;
+    (p.menuOptions || []).forEach((option) => {
+      acc[option] = (acc[option] || 0) + 1;
+    });
     return acc;
   }, {});
   const menuTallyEntries = Object.entries(menuTally);
@@ -36,7 +37,9 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
               className={`person-item${person.personId === myPersonId ? ' is-me' : ''}`}
             >
               {person.name}
-              {person.menuOption && <div className="note-status">🍹 {person.menuOption}</div>}
+              {person.menuOptions && person.menuOptions.length > 0 && (
+                <div className="note-status">🍹 {person.menuOptions.join(', ')}</div>
+              )}
               {person.meal && <div className="note-status">🍽️ {person.meal}</div>}
               {person.note && <div className="note-status">{person.note}</div>}
             </div>

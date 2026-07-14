@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
 
-function MenuPicker({ menuOptions, myOption, onSetOption }) {
+function MenuPicker({ menuOptions, myOptions, onToggleOption, onAddOption }) {
   const [newOption, setNewOption] = useState('');
 
   function handleAdd(e) {
     e.preventDefault();
     const trimmed = newOption.trim();
     if (!trimmed) return;
-    onSetOption(trimmed);
+    onAddOption(trimmed);
     setNewOption('');
   }
 
   return (
     <div>
-      <div className="my-status-title my-status-subtitle">메뉴 선택</div>
+      <div className="my-status-title my-status-subtitle">메뉴 선택 (복수 선택 가능)</div>
       {menuOptions.length > 0 && (
         <div className="menu-options">
           {menuOptions.map((option) => (
             <button
               key={option}
               type="button"
-              className={`menu-option-btn${myOption === option ? ' selected' : ''}`}
-              onClick={() => onSetOption(option)}
+              className={`menu-option-btn${myOptions.includes(option) ? ' selected' : ''}`}
+              onClick={() => onToggleOption(option)}
             >
               {option}
             </button>
@@ -43,8 +43,8 @@ function MenuPicker({ menuOptions, myOption, onSetOption }) {
 }
 
 export default function MyStatus({
-  myAttending, myNote, myOption, myMeal, menuEnabled, menuOptions, mealEnabled,
-  onSetAttending, onSetNote, onSetOption, onSetMeal,
+  myAttending, myNote, myOptions, myMeal, menuEnabled, menuOptions, mealEnabled,
+  onSetAttending, onSetNote, onToggleOption, onAddOption, onSetMeal,
 }) {
   const [note, setNote] = useState(myNote || '');
 
@@ -100,7 +100,12 @@ export default function MyStatus({
 
       {menuEnabled && myAttending === true && (
         <div style={{ marginBottom: 20 }}>
-          <MenuPicker menuOptions={menuOptions} myOption={myOption} onSetOption={onSetOption} />
+          <MenuPicker
+            menuOptions={menuOptions}
+            myOptions={myOptions}
+            onToggleOption={onToggleOption}
+            onAddOption={onAddOption}
+          />
         </div>
       )}
 
