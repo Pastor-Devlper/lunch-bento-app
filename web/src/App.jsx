@@ -26,8 +26,7 @@ export default function App() {
   const [people, setPeople] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [personId, setPersonId] = useState(() => {
-    const stored = localStorage.getItem(IDENTITY_KEY);
-    return stored ? Number(stored) : null;
+    return localStorage.getItem(IDENTITY_KEY) || null;
   });
   const [events, setEvents] = useState([]);
   const [eventError, setEventError] = useState('');

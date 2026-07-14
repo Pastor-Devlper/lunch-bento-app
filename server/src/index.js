@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { db, DEPARTMENTS } from './db.js';
+import { ObjectId } from 'mongodb';
+import { people, events, eventResponses, DEPARTMENTS } from './db.js';
 
 const app = express();
 app.use(cors());
@@ -13,15 +14,16 @@ function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
 }
 
-// menu_option is stored as a JSON array string; older rows may hold a plain string.
-function parseMenuOptions(raw) {
-  if (!raw) return [];
+function toObjectId(id) {
   try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [String(parsed)];
+    return new ObjectId(id);
   } catch {
-    return [raw];
+    return null;
   }
+}
+
+function personOut(p) {
+  return { id: p._id.toString(), name: p.name, department: p.department };
 }
 
 // Authentication
@@ -40,13 +42,13 @@ app.get('/api/departments', (req, res) => {
 });
 
 // Full roster (used for the name picker / identity screen).
-app.get('/api/people', (req, res) => {
-  const people = db.prepare('SELECT id, name, department FROM people ORDER BY id').all();
-  res.json(people);
+app.get('/api/people', async (req, res) => {
+  const rows = await people.find().sort({ _id: 1 }).toArray();
+  res.json(rows.map(personOut));
 });
 
 // Add a new person to a department (new hire, or a one-off visitor under '방문').
-app.post('/api/people', (req, res) => {
+app.post('/api/people', async (req, res) => {
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
   const { department } = req.body;
 
@@ -56,50 +58,77 @@ app.post('/api/people', (req, res) => {
   if (!DEPARTMENTS.includes(department)) {
     return res.status(400).json({ error: 'invalid department' });
   }
-  const existing = db.prepare('SELECT id FROM people WHERE name = ?').get(name);
+  const existing = await people.findOne({ name });
   if (existing) {
     return res.status(409).json({ error: '이미 등록된 이름이에요' });
   }
 
-  const result = db.prepare('INSERT INTO people (name, department) VALUES (?, ?)').run(name, department);
-  res.status(201).json({ id: result.lastInsertRowid, name, department });
+  const result = await people.insertOne({ name, department, reminderEnabled: true });
+  res.status(201).json({ id: result.insertedId.toString(), name, department });
 });
 
 // Delete a person
-app.delete('/api/people/:personId', (req, res) => {
-  const personId = Number(req.params.personId);
-  const person = db.prepare('SELECT id FROM people WHERE id = ?').get(personId);
+app.delete('/api/people/:personId', async (req, res) => {
+  const personId = toObjectId(req.params.personId);
+  if (!personId) {
+    return res.status(404).json({ error: 'unknown person' });
+  }
+  const person = await people.findOne({ _id: personId });
   if (!person) {
     return res.status(404).json({ error: 'unknown person' });
   }
-  db.prepare('DELETE FROM responses WHERE person_id = ?').run(personId);
-  db.prepare('DELETE FROM people WHERE id = ?').run(personId);
+  await eventResponses.deleteMany({ personId });
+  await people.deleteOne({ _id: personId });
   res.json({ success: true });
 });
 
 // All events, with attendance/absence/pending counts across the current roster.
-app.get('/api/events', (req, res) => {
-  const totalPeople = db.prepare('SELECT COUNT(*) AS c FROM people').get().c;
-  const events = db.prepare(`
-    SELECT e.id AS id, e.title AS title, e.event_date AS eventDate, e.description AS description,
-           e.created_at AS createdAt, e.menu_enabled AS menuEnabled, e.meal_enabled AS mealEnabled,
-           e.menu_options AS menuOptions, e.multi_select AS multiSelect,
-           p.name AS createdByName,
-           SUM(CASE WHEN r.attending = 1 THEN 1 ELSE 0 END) AS attendingCount,
-           SUM(CASE WHEN r.attending = 0 THEN 1 ELSE 0 END) AS absentCount
-    FROM events e
-    LEFT JOIN people p ON p.id = e.created_by
-    LEFT JOIN event_responses r ON r.event_id = e.id
-    GROUP BY e.id
-    ORDER BY e.event_date DESC, e.id DESC
-  `).all();
+app.get('/api/events', async (req, res) => {
+  const totalPeople = await people.countDocuments();
 
-  res.json(events.map((e) => ({
-    ...e,
-    menuEnabled: Boolean(e.menuEnabled),
-    mealEnabled: Boolean(e.mealEnabled),
+  const rows = await events.aggregate([
+    {
+      $lookup: {
+        from: 'event_responses',
+        localField: '_id',
+        foreignField: 'eventId',
+        as: 'responses',
+      },
+    },
+    {
+      $lookup: {
+        from: 'people',
+        localField: 'createdBy',
+        foreignField: '_id',
+        as: 'creator',
+      },
+    },
+    {
+      $addFields: {
+        attendingCount: {
+          $size: { $filter: { input: '$responses', cond: { $eq: ['$$this.attending', true] } } },
+        },
+        absentCount: {
+          $size: { $filter: { input: '$responses', cond: { $eq: ['$$this.attending', false] } } },
+        },
+        createdByName: { $arrayElemAt: ['$creator.name', 0] },
+      },
+    },
+    { $project: { responses: 0, creator: 0 } },
+    { $sort: { eventDate: -1, _id: -1 } },
+  ]).toArray();
+
+  res.json(rows.map((e) => ({
+    id: e._id.toString(),
+    title: e.title,
+    eventDate: e.eventDate,
+    description: e.description,
+    createdAt: e.createdAt,
+    createdByName: e.createdByName || null,
+    menuEnabled: true,
+    mealEnabled: false,
     multiSelect: Boolean(e.multiSelect),
-    menuOptions: parseMenuOptions(e.menuOptions),
+    menuOptions: e.menuOptions || [],
     attendingCount: e.attendingCount || 0,
     absentCount: e.absentCount || 0,
     pendingCount: totalPeople - (e.attendingCount || 0) - (e.absentCount || 0),
@@ -108,10 +137,10 @@ app.get('/api/events', (req, res) => {
 
 // Create a new event. Menu selection is always on; multiSelect controls whether
 // a person may pick more than one option.
-app.post('/api/events', (req, res) => {
+app.post('/api/events', async (req, res) => {
   const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
   const { eventDate, description, multiSelect } = req.body;
-  const createdBy = Number(req.body.createdBy);
+  const createdBy = toObjectId(req.body.createdBy);
 
   if (!title) {
     return res.status(400).json({ error: '이벤트 이름을 입력해주세요' });
@@ -119,111 +148,125 @@ app.post('/api/events', (req, res) => {
   if (eventDate != null && !isValidDate(eventDate)) {
     return res.status(400).json({ error: 'eventDate must be YYYY-MM-DD or null' });
   }
-  const person = db.prepare('SELECT id FROM people WHERE id = ?').get(createdBy);
-  if (!person) {
+  if (!createdBy || !(await people.findOne({ _id: createdBy }))) {
     return res.status(400).json({ error: 'unknown createdBy person' });
   }
 
-  const multiSelectValue = multiSelect === false ? 0 : 1;
+  const multiSelectValue = multiSelect !== false;
   const now = new Date().toISOString();
-  const result = db.prepare(`
-    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled, menu_options, multi_select)
-    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
-  `).run(title, eventDate || null, description || null, createdBy, now, '[]', multiSelectValue);
-
-  res.status(201).json({
-    id: result.lastInsertRowid,
+  const doc = {
     title,
     eventDate: eventDate || null,
     description: description || null,
+    createdBy,
+    createdAt: now,
+    multiSelect: multiSelectValue,
+    menuOptions: [],
+  };
+  const result = await events.insertOne(doc);
+  const totalPeople = await people.countDocuments();
+
+  res.status(201).json({
+    id: result.insertedId.toString(),
+    title,
+    eventDate: doc.eventDate,
+    description: doc.description,
     createdAt: now,
     menuEnabled: true,
     mealEnabled: false,
-    multiSelect: Boolean(multiSelectValue),
+    multiSelect: multiSelectValue,
     menuOptions: [],
     attendingCount: 0,
     absentCount: 0,
-    pendingCount: db.prepare('SELECT COUNT(*) AS c FROM people').get().c,
+    pendingCount: totalPeople,
   });
 });
 
 // Add a new menu option to an event's persistent option pool (visible to everyone,
 // independent of who currently has it selected).
-app.post('/api/events/:eventId/menu-options', (req, res) => {
-  const eventId = Number(req.params.eventId);
+app.post('/api/events/:eventId/menu-options', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
   const option = typeof req.body.option === 'string' ? req.body.option.trim() : '';
 
   if (!option) {
     return res.status(400).json({ error: '메뉴 이름을 입력해주세요' });
   }
-  const event = db.prepare('SELECT menu_options AS menuOptions FROM events WHERE id = ?').get(eventId);
-  if (!event) {
+  if (!eventId) {
     return res.status(404).json({ error: 'unknown event' });
   }
 
-  const current = parseMenuOptions(event.menuOptions);
-  if (!current.includes(option)) {
-    current.push(option);
-    db.prepare('UPDATE events SET menu_options = ? WHERE id = ?').run(JSON.stringify(current), eventId);
+  const result = await events.findOneAndUpdate(
+    { _id: eventId },
+    { $addToSet: { menuOptions: option } },
+    { returnDocument: 'after' },
+  );
+  if (!result) {
+    return res.status(404).json({ error: 'unknown event' });
   }
 
-  res.json({ menuOptions: current });
+  res.json({ menuOptions: result.menuOptions || [] });
 });
 
 // Delete an event. Requires the delete password.
-app.delete('/api/events/:eventId', (req, res) => {
-  const eventId = Number(req.params.eventId);
+app.delete('/api/events/:eventId', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
   const { password } = req.body;
   if (password !== DELETE_PASSWORD) {
     return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
   }
-  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  const event = await events.findOne({ _id: eventId });
   if (!event) {
     return res.status(404).json({ error: 'unknown event' });
   }
-  db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
+  await eventResponses.deleteMany({ eventId });
+  await events.deleteOne({ _id: eventId });
   res.json({ success: true });
 });
 
 // Everyone's attendance/note status for a given event.
-app.get('/api/events/:eventId/responses', (req, res) => {
-  const eventId = Number(req.params.eventId);
-  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
+app.get('/api/events/:eventId/responses', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  const event = await events.findOne({ _id: eventId });
   if (!event) {
     return res.status(404).json({ error: 'unknown event' });
   }
-  const rows = db.prepare(`
-    SELECT p.id AS personId, p.name AS name, r.attending AS attending, r.note AS note,
-           r.menu_option AS menuOption, r.meal AS meal
-    FROM people p
-    LEFT JOIN event_responses r ON r.person_id = p.id AND r.event_id = ?
-    ORDER BY p.id
-  `).all(eventId);
 
-  const people = rows.map((row) => ({
-    personId: row.personId,
-    name: row.name,
-    attending: row.attending === null ? null : Boolean(row.attending),
-    note: row.note,
-    menuOptions: parseMenuOptions(row.menuOption),
-    meal: row.meal,
-  }));
+  const [allPeople, allResponses] = await Promise.all([
+    people.find().sort({ _id: 1 }).toArray(),
+    eventResponses.find({ eventId }).toArray(),
+  ]);
+  const byPersonId = new Map(allResponses.map((r) => [r.personId.toString(), r]));
 
-  res.json(people);
+  const rows = allPeople.map((p) => {
+    const r = byPersonId.get(p._id.toString());
+    return {
+      personId: p._id.toString(),
+      name: p.name,
+      attending: r?.attending ?? null,
+      note: r?.note ?? null,
+      menuOptions: r?.menuOptions ?? [],
+    };
+  });
+
+  res.json(rows);
 });
 
-// Upsert one person's attendance/note/menu choices/meal status for a given event.
-app.put('/api/events/:eventId/responses/:personId', (req, res) => {
-  const eventId = Number(req.params.eventId);
-  const personId = Number(req.params.personId);
-  const { attending, note, menuOptions, meal } = req.body;
+// Upsert one person's attendance/note/menu choices for a given event.
+app.put('/api/events/:eventId/responses/:personId', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  const personId = toObjectId(req.params.personId);
+  const { attending, note, menuOptions } = req.body;
 
-  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
-  if (!event) {
+  if (!eventId || !(await events.findOne({ _id: eventId }))) {
     return res.status(404).json({ error: 'unknown event' });
   }
-  const person = db.prepare('SELECT id FROM people WHERE id = ?').get(personId);
-  if (!person) {
+  if (!personId || !(await people.findOne({ _id: personId }))) {
     return res.status(404).json({ error: 'unknown person' });
   }
   if (attending !== null && typeof attending !== 'boolean') {
@@ -236,52 +279,58 @@ app.put('/api/events/:eventId/responses/:personId', (req, res) => {
     && (!Array.isArray(menuOptions) || !menuOptions.every((o) => typeof o === 'string'))) {
     return res.status(400).json({ error: 'menuOptions must be an array of strings or null' });
   }
-  if (meal !== null && meal !== undefined && meal !== '먹음' && meal !== '안먹음') {
-    return res.status(400).json({ error: "meal must be '먹음', '안먹음', or null" });
-  }
 
-  const attendingValue = attending === null ? null : (attending ? 1 : 0);
   const noteValue = note || null;
   const cleanOptions = (menuOptions || []).map((o) => o.trim()).filter(Boolean);
-  const menuOptionValue = cleanOptions.length > 0 ? JSON.stringify(cleanOptions) : null;
-  const mealValue = meal || null;
   const now = new Date().toISOString();
 
-  db.prepare(`
-    INSERT INTO event_responses (event_id, person_id, attending, note, menu_option, meal, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(event_id, person_id) DO UPDATE SET
-      attending = excluded.attending,
-      note = excluded.note,
-      menu_option = excluded.menu_option,
-      meal = excluded.meal,
-      updated_at = excluded.updated_at
-  `).run(eventId, personId, attendingValue, noteValue, menuOptionValue, mealValue, now);
+  await eventResponses.updateOne(
+    { eventId, personId },
+    {
+      $set: {
+        attending: attending === undefined ? null : attending,
+        note: noteValue,
+        menuOptions: cleanOptions,
+        updatedAt: now,
+      },
+    },
+    { upsert: true },
+  );
 
   res.json({
-    eventId, personId, attending, note: noteValue, menuOptions: cleanOptions, meal: mealValue, updatedAt: now,
+    eventId: eventId.toString(),
+    personId: personId.toString(),
+    attending: attending === undefined ? null : attending,
+    note: noteValue,
+    menuOptions: cleanOptions,
+    updatedAt: now,
   });
 });
 
 // Per-person reminder preference.
-app.get('/api/settings/:personId', (req, res) => {
-  const personId = Number(req.params.personId);
-  const person = db.prepare('SELECT id, reminder_enabled AS reminderEnabled FROM people WHERE id = ?').get(personId);
+app.get('/api/settings/:personId', async (req, res) => {
+  const personId = toObjectId(req.params.personId);
+  if (!personId) {
+    return res.status(404).json({ error: 'unknown person' });
+  }
+  const person = await people.findOne({ _id: personId });
   if (!person) {
     return res.status(404).json({ error: 'unknown person' });
   }
   res.json({ reminderEnabled: Boolean(person.reminderEnabled) });
 });
 
-app.put('/api/settings/:personId', (req, res) => {
-  const personId = Number(req.params.personId);
+app.put('/api/settings/:personId', async (req, res) => {
+  const personId = toObjectId(req.params.personId);
   const { reminderEnabled } = req.body;
   if (typeof reminderEnabled !== 'boolean') {
     return res.status(400).json({ error: 'reminderEnabled must be boolean' });
   }
-  const result = db.prepare('UPDATE people SET reminder_enabled = ? WHERE id = ?')
-    .run(reminderEnabled ? 1 : 0, personId);
-  if (result.changes === 0) {
+  if (!personId) {
+    return res.status(404).json({ error: 'unknown person' });
+  }
+  const result = await people.updateOne({ _id: personId }, { $set: { reminderEnabled } });
+  if (result.matchedCount === 0) {
     return res.status(404).json({ error: 'unknown person' });
   }
   res.json({ reminderEnabled });
