@@ -109,8 +109,8 @@ export default function App() {
     refreshEvents();
   }
 
-  function handleCreateEvent({ title, eventDate, description, menuEnabled, mealEnabled }) {
-    return createEvent({ title, eventDate, description, createdBy: personId, menuEnabled, mealEnabled }).then((event) => {
+  function handleCreateEvent({ title, eventDate, description, multiSelect }) {
+    return createEvent({ title, eventDate, description, createdBy: personId, multiSelect }).then((event) => {
       setEvents((prev) => [event, ...prev]);
       return event;
     });
@@ -147,9 +147,15 @@ export default function App() {
   }
 
   function handleToggleOption(option) {
-    const nextOptions = myOptions.includes(option)
-      ? myOptions.filter((o) => o !== option)
-      : [...myOptions, option];
+    const isMultiSelect = selectedEvent?.multiSelect ?? true;
+    let nextOptions;
+    if (isMultiSelect) {
+      nextOptions = myOptions.includes(option)
+        ? myOptions.filter((o) => o !== option)
+        : [...myOptions, option];
+    } else {
+      nextOptions = myOptions.includes(option) ? [] : [option];
+    }
     setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, menuOptions: nextOptions } : p)));
     putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: nextOptions, meal: myMeal })
       .then(() => refreshResponses())
@@ -250,6 +256,7 @@ export default function App() {
         myMeal={myMeal}
         menuEnabled={Boolean(selectedEvent?.menuEnabled)}
         menuOptions={menuOptions}
+        multiSelect={selectedEvent?.multiSelect ?? true}
         mealEnabled={Boolean(selectedEvent?.mealEnabled)}
         onSetAttending={handleSetAttending}
         onSetNote={handleSetNote}

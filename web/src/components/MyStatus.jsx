@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-function MenuPicker({ menuOptions, myOptions, onToggleOption, onAddOption }) {
+function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAddOption }) {
   const [newOption, setNewOption] = useState('');
 
   function handleAdd(e) {
@@ -13,7 +13,9 @@ function MenuPicker({ menuOptions, myOptions, onToggleOption, onAddOption }) {
 
   return (
     <div>
-      <div className="my-status-title my-status-subtitle">메뉴 선택 (복수 선택 가능)</div>
+      <div className="my-status-title my-status-subtitle">
+        메뉴 선택 {multiSelect ? '(복수 선택 가능)' : '(하나만 선택)'}
+      </div>
       {menuOptions.length > 0 && (
         <div className="menu-options">
           {menuOptions.map((option) => (
@@ -43,7 +45,7 @@ function MenuPicker({ menuOptions, myOptions, onToggleOption, onAddOption }) {
 }
 
 export default function MyStatus({
-  myAttending, myNote, myOptions, myMeal, menuEnabled, menuOptions, mealEnabled,
+  myAttending, myNote, myOptions, myMeal, menuEnabled, menuOptions, multiSelect, mealEnabled,
   onSetAttending, onSetNote, onToggleOption, onAddOption, onSetMeal,
 }) {
   const [note, setNote] = useState(myNote || '');
@@ -103,6 +105,7 @@ export default function MyStatus({
           <MenuPicker
             menuOptions={menuOptions}
             myOptions={myOptions}
+            multiSelect={multiSelect}
             onToggleOption={onToggleOption}
             onAddOption={onAddOption}
           />

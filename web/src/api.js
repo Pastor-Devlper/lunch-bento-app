@@ -45,10 +45,10 @@ export function fetchEvents() {
   return request('/events');
 }
 
-export function createEvent({ title, eventDate, description, createdBy, menuEnabled, mealEnabled }) {
+export function createEvent({ title, eventDate, description, createdBy, multiSelect }) {
   return request('/events', {
     method: 'POST',
-    body: JSON.stringify({ title, eventDate, description, createdBy, menuEnabled, mealEnabled }),
+    body: JSON.stringify({ title, eventDate, description, createdBy, multiSelect }),
   });
 }
 

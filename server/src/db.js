@@ -73,6 +73,9 @@ if (!eventColumns.includes('meal_enabled')) {
 if (!eventColumns.includes('menu_options')) {
   db.exec('ALTER TABLE events ADD COLUMN menu_options TEXT');
 }
+if (!eventColumns.includes('multi_select')) {
+  db.exec('ALTER TABLE events ADD COLUMN multi_select INTEGER NOT NULL DEFAULT 1');
+}
 
 const eventResponseColumns = db.prepare('PRAGMA table_info(event_responses)').all().map((c) => c.name);
 if (!eventResponseColumns.includes('menu_option')) {

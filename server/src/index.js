@@ -82,7 +82,7 @@ app.get('/api/events', (req, res) => {
   const events = db.prepare(`
     SELECT e.id AS id, e.title AS title, e.event_date AS eventDate, e.description AS description,
            e.created_at AS createdAt, e.menu_enabled AS menuEnabled, e.meal_enabled AS mealEnabled,
-           e.menu_options AS menuOptions,
+           e.menu_options AS menuOptions, e.multi_select AS multiSelect,
            p.name AS createdByName,
            SUM(CASE WHEN r.attending = 1 THEN 1 ELSE 0 END) AS attendingCount,
            SUM(CASE WHEN r.attending = 0 THEN 1 ELSE 0 END) AS absentCount
@@ -97,6 +97,7 @@ app.get('/api/events', (req, res) => {
     ...e,
     menuEnabled: Boolean(e.menuEnabled),
     mealEnabled: Boolean(e.mealEnabled),
+    multiSelect: Boolean(e.multiSelect),
     menuOptions: parseMenuOptions(e.menuOptions),
     attendingCount: e.attendingCount || 0,
     absentCount: e.absentCount || 0,
@@ -104,10 +105,11 @@ app.get('/api/events', (req, res) => {
   })));
 });
 
-// Create a new event.
+// Create a new event. Menu selection is always on; multiSelect controls whether
+// a person may pick more than one option.
 app.post('/api/events', (req, res) => {
   const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
-  const { eventDate, description, menuEnabled, mealEnabled } = req.body;
+  const { eventDate, description, multiSelect } = req.body;
   const createdBy = Number(req.body.createdBy);
 
   if (!title) {
@@ -121,11 +123,12 @@ app.post('/api/events', (req, res) => {
     return res.status(400).json({ error: 'unknown createdBy person' });
   }
 
+  const multiSelectValue = multiSelect === false ? 0 : 1;
   const now = new Date().toISOString();
   const result = db.prepare(`
-    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled, menu_options)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(title, eventDate || null, description || null, createdBy, now, menuEnabled ? 1 : 0, mealEnabled ? 1 : 0, '[]');
+    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled, menu_options, multi_select)
+    VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
+  `).run(title, eventDate || null, description || null, createdBy, now, '[]', multiSelectValue);
 
   res.status(201).json({
     id: result.lastInsertRowid,
@@ -133,8 +136,9 @@ app.post('/api/events', (req, res) => {
     eventDate: eventDate || null,
     description: description || null,
     createdAt: now,
-    menuEnabled: Boolean(menuEnabled),
-    mealEnabled: Boolean(mealEnabled),
+    menuEnabled: true,
+    mealEnabled: false,
+    multiSelect: Boolean(multiSelectValue),
     menuOptions: [],
     attendingCount: 0,
     absentCount: 0,
