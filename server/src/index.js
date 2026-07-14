@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const PASSWORD = process.env.PASSWORD;
+const DELETE_PASSWORD = process.env.DELETE_PASSWORD;
 
 function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
@@ -169,9 +170,13 @@ app.post('/api/events/:eventId/menu-options', (req, res) => {
   res.json({ menuOptions: current });
 });
 
-// Delete an event.
+// Delete an event. Requires the delete password.
 app.delete('/api/events/:eventId', (req, res) => {
   const eventId = Number(req.params.eventId);
+  const { password } = req.body;
+  if (password !== DELETE_PASSWORD) {
+    return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
+  }
   const event = db.prepare('SELECT id FROM events WHERE id = ?').get(eventId);
   if (!event) {
     return res.status(404).json({ error: 'unknown event' });

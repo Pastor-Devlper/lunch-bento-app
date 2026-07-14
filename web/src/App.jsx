@@ -116,12 +116,12 @@ export default function App() {
     });
   }
 
-  function handleDeleteEvent(eventId) {
-    deleteEvent(eventId)
+  function handleDeleteEvent(eventId, password) {
+    deleteEvent(eventId, password)
       .then(() => {
         setEvents((prev) => prev.filter((e) => e.id !== eventId));
       })
-      .catch(() => setEventError('이벤트를 삭제하지 못했어요'));
+      .catch((err) => setEventError(err.message || '이벤트를 삭제하지 못했어요'));
   }
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);

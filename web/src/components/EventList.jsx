@@ -76,9 +76,10 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
 
   function handleDelete(e, eventId) {
     e.stopPropagation();
-    if (confirm('이 이벤트를 삭제할까요? 응답 데이터도 함께 삭제됩니다.')) {
-      onDelete(eventId);
-    }
+    if (!confirm('이 이벤트를 삭제할까요? 응답 데이터도 함께 삭제됩니다.')) return;
+    const password = prompt('삭제 비밀번호를 입력하세요');
+    if (password === null) return;
+    onDelete(eventId, password);
   }
 
   return (

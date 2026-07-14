@@ -52,9 +52,10 @@ export function createEvent({ title, eventDate, description, createdBy, multiSel
   });
 }
 
-export function deleteEvent(eventId) {
+export function deleteEvent(eventId, password) {
   return request(`/events/${eventId}`, {
     method: 'DELETE',
+    body: JSON.stringify({ password }),
   });
 }
 
