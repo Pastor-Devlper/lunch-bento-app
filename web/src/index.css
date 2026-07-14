@@ -289,6 +289,16 @@ button {
   font-weight: 500;
 }
 
+.setting-hint {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: 600;
+  margin-left: 8px;
+  background: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 .toggle {
   width: 48px;
   height: 28px;

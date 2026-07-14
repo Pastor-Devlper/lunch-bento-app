@@ -7,9 +7,12 @@ export default function Settings({ reminderEnabled, onToggle, onDelete }) {
 
   return (
     <div className="settings-section">
-      <div className="settings-title">⚙️ 알림 설정</div>
+      <div className="settings-title">⚙️ 설정</div>
       <div className="setting-item">
-        <span className="setting-label">알림 받기</span>
+        <span className="setting-label">
+          알림 받기
+          <span className="setting-hint">준비중</span>
+        </span>
         <button
           type="button"
           className={`toggle${reminderEnabled ? ' active' : ''}`}
