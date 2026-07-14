@@ -66,6 +66,13 @@ export function addMenuOption(eventId, option) {
   });
 }
 
+export function removeMenuOption(eventId, option) {
+  return request(`/events/${eventId}/menu-options`, {
+    method: 'DELETE',
+    body: JSON.stringify({ option }),
+  });
+}
+
 export function fetchEventResponses(eventId) {
   return request(`/events/${eventId}/responses`);
 }

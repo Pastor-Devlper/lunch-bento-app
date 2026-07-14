@@ -207,6 +207,35 @@ app.post('/api/events/:eventId/menu-options', async (req, res) => {
   res.json({ menuOptions: result.menuOptions || [] });
 });
 
+// Remove a menu option from an event's pool, and from anyone who had it selected.
+app.delete('/api/events/:eventId/menu-options', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  const option = typeof req.body.option === 'string' ? req.body.option.trim() : '';
+
+  if (!option) {
+    return res.status(400).json({ error: '메뉴 이름을 입력해주세요' });
+  }
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+
+  const result = await events.findOneAndUpdate(
+    { _id: eventId },
+    { $pull: { menuOptions: option } },
+    { returnDocument: 'after' },
+  );
+  if (!result) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+
+  await eventResponses.updateMany(
+    { eventId, menuOptions: option },
+    { $pull: { menuOptions: option } },
+  );
+
+  res.json({ menuOptions: result.menuOptions || [] });
+});
+
 // Delete an event. Requires the delete password.
 app.delete('/api/events/:eventId', async (req, res) => {
   const eventId = toObjectId(req.params.eventId);

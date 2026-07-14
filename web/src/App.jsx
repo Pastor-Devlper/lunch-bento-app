@@ -10,7 +10,7 @@ import AuthScreen from './components/AuthScreen.jsx';
 import EventList from './components/EventList.jsx';
 import {
   fetchPeople, fetchDepartments, addPerson, deletePerson,
-  fetchEvents, createEvent, deleteEvent, addMenuOption, fetchEventResponses, putEventResponse,
+  fetchEvents, createEvent, deleteEvent, addMenuOption, removeMenuOption, fetchEventResponses, putEventResponse,
 } from './api.js';
 import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
 
@@ -174,6 +174,18 @@ export default function App() {
       .catch(() => {});
   }
 
+  function handleRemoveOption(option) {
+    removeMenuOption(selectedEventId, option)
+      .then(({ menuOptions: updated }) => {
+        setEvents((prev) => prev.map((e) => (e.id === selectedEventId ? { ...e, menuOptions: updated } : e)));
+        setResponses((prev) => prev.map((p) => ({
+          ...p,
+          menuOptions: (p.menuOptions || []).filter((o) => o !== option),
+        })));
+      })
+      .catch(() => {});
+  }
+
   function handleDeleteUser() {
     deletePerson(personId)
       .then(() => {
@@ -250,6 +262,7 @@ export default function App() {
         onSetNote={handleSetNote}
         onToggleOption={handleToggleOption}
         onAddOption={handleAddOption}
+        onRemoveOption={handleRemoveOption}
       />
 
       <SummaryStats

@@ -463,6 +463,36 @@ button {
   border-color: white;
 }
 
+.menu-option-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu-option-delete {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.menu-option-delete:hover {
+  background: white;
+}
+
 .menu-add-form {
   display: grid;
   grid-template-columns: 1fr auto;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAddOption }) {
+function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAddOption, onRemoveOption }) {
   const [newOption, setNewOption] = useState('');
 
   function handleAdd(e) {
@@ -11,6 +11,12 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
     setNewOption('');
   }
 
+  function handleRemove(option) {
+    if (confirm(`'${option}' 메뉴를 삭제할까요?`)) {
+      onRemoveOption(option);
+    }
+  }
+
   return (
     <div>
       <div className="my-status-title my-status-subtitle">
@@ -19,14 +25,23 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
       {menuOptions.length > 0 && (
         <div className="menu-options">
           {menuOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={`menu-option-btn${myOptions.includes(option) ? ' selected' : ''}`}
-              onClick={() => onToggleOption(option)}
-            >
-              {option}
-            </button>
+            <span key={option} className="menu-option-wrap">
+              <button
+                type="button"
+                className={`menu-option-btn${myOptions.includes(option) ? ' selected' : ''}`}
+                onClick={() => onToggleOption(option)}
+              >
+                {option}
+              </button>
+              <button
+                type="button"
+                className="menu-option-delete"
+                onClick={() => handleRemove(option)}
+                aria-label={`${option} 삭제`}
+              >
+                ×
+              </button>
+            </span>
           ))}
         </div>
       )}
@@ -46,7 +61,7 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
 
 export default function MyStatus({
   myAttending, myNote, myOptions, menuEnabled, menuOptions, multiSelect,
-  onSetAttending, onSetNote, onToggleOption, onAddOption,
+  onSetAttending, onSetNote, onToggleOption, onAddOption, onRemoveOption,
 }) {
   const [note, setNote] = useState(myNote || '');
 
@@ -86,6 +101,7 @@ export default function MyStatus({
             multiSelect={multiSelect}
             onToggleOption={onToggleOption}
             onAddOption={onAddOption}
+            onRemoveOption={onRemoveOption}
           />
         </div>
       )}
