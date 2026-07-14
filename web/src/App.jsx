@@ -10,7 +10,7 @@ import AuthScreen from './components/AuthScreen.jsx';
 import EventList from './components/EventList.jsx';
 import {
   fetchPeople, fetchDepartments, addPerson, deletePerson,
-  fetchEvents, createEvent, deleteEvent, fetchEventResponses, putEventResponse,
+  fetchEvents, createEvent, deleteEvent, addMenuOption, fetchEventResponses, putEventResponse,
   fetchSettings, putSettings,
 } from './api.js';
 import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
@@ -71,9 +71,12 @@ export default function App() {
     setSelectedTab('attending');
     refreshResponses();
 
-    const interval = setInterval(refreshResponses, POLL_MS);
+    const interval = setInterval(() => {
+      refreshResponses();
+      refreshEvents();
+    }, POLL_MS);
     return () => clearInterval(interval);
-  }, [selectedEventId, refreshResponses]);
+  }, [selectedEventId, refreshResponses, refreshEvents]);
 
   function handleSelectPerson(id) {
     localStorage.setItem(IDENTITY_KEY, String(id));
@@ -121,12 +124,13 @@ export default function App() {
       .catch(() => setEventError('이벤트를 삭제하지 못했어요'));
   }
 
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
   const me = responses.find((p) => p.personId === personId);
   const myAttending = me?.attending ?? null;
   const myNote = me?.note ?? null;
   const myOptions = me?.menuOptions ?? [];
   const myMeal = me?.meal ?? null;
-  const menuOptions = [...new Set(responses.flatMap((p) => p.menuOptions || []))];
+  const menuOptions = selectedEvent?.menuOptions ?? [];
 
   function handleSetAttending(attending) {
     setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, attending } : p)));
@@ -153,12 +157,12 @@ export default function App() {
   }
 
   function handleAddOption(option) {
-    if (myOptions.includes(option)) return;
-    const nextOptions = [...myOptions, option];
-    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, menuOptions: nextOptions } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: nextOptions, meal: myMeal })
-      .then(() => refreshResponses())
-      .catch(() => refreshResponses());
+    if (menuOptions.includes(option)) return;
+    addMenuOption(selectedEventId, option)
+      .then(({ menuOptions: updated }) => {
+        setEvents((prev) => prev.map((e) => (e.id === selectedEventId ? { ...e, menuOptions: updated } : e)));
+      })
+      .catch(() => {});
   }
 
   function handleSetMeal(meal) {
@@ -225,7 +229,6 @@ export default function App() {
     );
   }
 
-  const selectedEvent = events.find((e) => e.id === selectedEventId);
   const attendingPeople = responses.filter((p) => p.attending === true);
   const absentPeople = responses.filter((p) => p.attending === false);
   const pendingPeople = responses.filter((p) => p.attending === null);

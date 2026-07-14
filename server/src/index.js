@@ -82,6 +82,7 @@ app.get('/api/events', (req, res) => {
   const events = db.prepare(`
     SELECT e.id AS id, e.title AS title, e.event_date AS eventDate, e.description AS description,
            e.created_at AS createdAt, e.menu_enabled AS menuEnabled, e.meal_enabled AS mealEnabled,
+           e.menu_options AS menuOptions,
            p.name AS createdByName,
            SUM(CASE WHEN r.attending = 1 THEN 1 ELSE 0 END) AS attendingCount,
            SUM(CASE WHEN r.attending = 0 THEN 1 ELSE 0 END) AS absentCount
@@ -96,6 +97,7 @@ app.get('/api/events', (req, res) => {
     ...e,
     menuEnabled: Boolean(e.menuEnabled),
     mealEnabled: Boolean(e.mealEnabled),
+    menuOptions: parseMenuOptions(e.menuOptions),
     attendingCount: e.attendingCount || 0,
     absentCount: e.absentCount || 0,
     pendingCount: totalPeople - (e.attendingCount || 0) - (e.absentCount || 0),
@@ -121,9 +123,9 @@ app.post('/api/events', (req, res) => {
 
   const now = new Date().toISOString();
   const result = db.prepare(`
-    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(title, eventDate || null, description || null, createdBy, now, menuEnabled ? 1 : 0, mealEnabled ? 1 : 0);
+    INSERT INTO events (title, event_date, description, created_by, created_at, menu_enabled, meal_enabled, menu_options)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(title, eventDate || null, description || null, createdBy, now, menuEnabled ? 1 : 0, mealEnabled ? 1 : 0, '[]');
 
   res.status(201).json({
     id: result.lastInsertRowid,
@@ -133,10 +135,34 @@ app.post('/api/events', (req, res) => {
     createdAt: now,
     menuEnabled: Boolean(menuEnabled),
     mealEnabled: Boolean(mealEnabled),
+    menuOptions: [],
     attendingCount: 0,
     absentCount: 0,
     pendingCount: db.prepare('SELECT COUNT(*) AS c FROM people').get().c,
   });
+});
+
+// Add a new menu option to an event's persistent option pool (visible to everyone,
+// independent of who currently has it selected).
+app.post('/api/events/:eventId/menu-options', (req, res) => {
+  const eventId = Number(req.params.eventId);
+  const option = typeof req.body.option === 'string' ? req.body.option.trim() : '';
+
+  if (!option) {
+    return res.status(400).json({ error: '메뉴 이름을 입력해주세요' });
+  }
+  const event = db.prepare('SELECT menu_options AS menuOptions FROM events WHERE id = ?').get(eventId);
+  if (!event) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+
+  const current = parseMenuOptions(event.menuOptions);
+  if (!current.includes(option)) {
+    current.push(option);
+    db.prepare('UPDATE events SET menu_options = ? WHERE id = ?').run(JSON.stringify(current), eventId);
+  }
+
+  res.json({ menuOptions: current });
 });
 
 // Delete an event.
