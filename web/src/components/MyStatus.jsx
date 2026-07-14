@@ -32,9 +32,7 @@ function MenuOptionPill({ option, selected, onToggle, onRemove }) {
   }
 
   function handleRemove() {
-    if (confirm(`'${option}' 메뉴를 삭제할까요?`)) {
-      onRemove();
-    }
+    onRemove();
     setRevealed(false);
   }
 
