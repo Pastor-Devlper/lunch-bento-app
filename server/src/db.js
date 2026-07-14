@@ -17,10 +17,11 @@ await eventResponses.createIndex({ eventId: 1, personId: 1 }, { unique: true });
 await people.createIndex({ name: 1 }, { unique: true });
 
 export const DEPARTMENTS = [
-  '총무국', '출판국', '지운국', '훈련국', 'Pearl', 'YRG', 'Kids', '방문',
+  '원장', '총무국', '출판국', '지운국', '훈련국', 'Pearl', 'YRG', 'Kids', '방문',
 ];
 
 const ROSTER = [
+  ['원장', '이애실'],
   ['총무국', '권준호'], ['총무국', '김효선'], ['총무국', '심태석'], ['총무국', '황시은'],
   ['출판국', '김만석'], ['출판국', '김하경'], ['출판국', '김하솜'],
   ['지운국', '한상규'],
