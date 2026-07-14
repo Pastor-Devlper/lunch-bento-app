@@ -104,9 +104,6 @@ export default function App() {
   function handleSwitchUser() {
     localStorage.removeItem(IDENTITY_KEY);
     setPersonId(null);
-    setEvents([]);
-    setSelectedEventId(null);
-    setResponses([]);
   }
 
   function handleSelectEvent(eventId) {

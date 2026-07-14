@@ -31,26 +31,6 @@ button {
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
-  position: relative;
-}
-
-.back-to-list-btn {
-  position: absolute;
-  left: 0;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #4ECDC4;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.back-to-list-btn:hover {
-  background: #E8F8F5;
-  border-color: #4ECDC4;
 }
 
 .header-info-row {
