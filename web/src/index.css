@@ -35,24 +35,25 @@ button {
 
 .header-info-row {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
   margin-bottom: 20px;
 }
 
-.header-user-badge {
+.header-info-text {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
+  justify-content: center;
   font-size: 13px;
   font-weight: 500;
   color: #666;
-  flex: 1;
+  text-align: center;
 }
 
-.switch-user-btn {
+.header-info-btn {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 20px;
@@ -62,9 +63,10 @@ button {
   color: #4ECDC4;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.switch-user-btn:hover {
+.header-info-btn:hover {
   background: #E8F8F5;
   border-color: #4ECDC4;
 }
@@ -81,16 +83,6 @@ button {
   text-align: center;
 }
 
-.header-date {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 0;
-  text-align: right;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
 
 /* Summary Stats */
 .summary-stats {
@@ -924,8 +916,6 @@ button {
 /* Responsive */
 @media (max-width: 768px) {
   .header-info-row {
-    flex-direction: column;
-    align-items: center;
     gap: 8px;
   }
 

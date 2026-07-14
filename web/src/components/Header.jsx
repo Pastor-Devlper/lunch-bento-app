@@ -5,19 +5,15 @@ export default function Header({ eventTitle, eventDateStr, myName, onSwitchUser,
         <h1 className="header-title">{eventTitle}</h1>
       </div>
       <div className="header-info-row">
-        <div className="header-date">{eventDateStr}</div>
-        {myName && (
-          <div className="header-user-badge">
-            {myName}님
-            <button type="button" className="switch-user-btn" onClick={onSwitchUser}>
-              이름 선택
-            </button>
-            {onBackToList && (
-              <button type="button" className="switch-user-btn" onClick={onBackToList}>
-                이벤트 선택
-              </button>
-            )}
-          </div>
+        <div className="header-info-text">{eventDateStr}</div>
+        {myName && <div className="header-info-text">{myName}님</div>}
+        <button type="button" className="header-info-btn" onClick={onSwitchUser}>
+          이름 선택
+        </button>
+        {onBackToList && (
+          <button type="button" className="header-info-btn" onClick={onBackToList}>
+            이벤트 선택
+          </button>
         )}
       </div>
     </div>
