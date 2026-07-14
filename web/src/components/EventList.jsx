@@ -6,7 +6,6 @@ function NewEventForm({ onCreate, onDone }) {
   const [eventDate, setEventDate] = useState('');
   const [description, setDescription] = useState('');
   const [menuEnabled, setMenuEnabled] = useState(false);
-  const [mealEnabled, setMealEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,7 +20,7 @@ function NewEventForm({ onCreate, onDone }) {
       eventDate: eventDate || null,
       description: description.trim() || null,
       menuEnabled,
-      mealEnabled,
+      mealEnabled: false,
     })
       .then(() => onDone())
       .catch((err) => {
@@ -62,16 +61,7 @@ function NewEventForm({ onCreate, onDone }) {
           onChange={(e) => setMenuEnabled(e.target.checked)}
           disabled={submitting}
         />
-        메뉴 선택 사용 (예: 커피 메뉴 정하기)
-      </label>
-      <label className="event-new-checkbox">
-        <input
-          type="checkbox"
-          checked={mealEnabled}
-          onChange={(e) => setMealEnabled(e.target.checked)}
-          disabled={submitting}
-        />
-        식사 여부 사용 (예: 점심 식사 여부 확인)
+        메뉴 선택 사용 (예: 커피 메뉴 정하기, 점심 식사 여부 확인)
       </label>
       <div className="event-new-actions">
         <button type="submit" className="picker-add-confirm" disabled={submitting}>만들기</button>
