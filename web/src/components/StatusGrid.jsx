@@ -15,13 +15,6 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
   }, {});
   const menuTallyEntries = Object.entries(menuTally);
 
-  const mealTally = attendingPeople.reduce((acc, p) => {
-    if (!p.meal) return acc;
-    acc[p.meal] = (acc[p.meal] || 0) + 1;
-    return acc;
-  }, {});
-  const mealTallyEntries = Object.entries(mealTally);
-
   return (
     <div className="status-grid-container">
       <div className={`status-column status-${selectedTab}`}>
@@ -40,7 +33,6 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
               {person.menuOptions && person.menuOptions.length > 0 && (
                 <div className="note-status">🍹 {person.menuOptions.join(', ')}</div>
               )}
-              {person.meal && <div className="note-status">🍽️ {person.meal}</div>}
               {person.note && <div className="note-status">{person.note}</div>}
             </div>
           ))}
@@ -49,13 +41,6 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
           <div className="menu-tally">
             {menuTallyEntries.map(([option, count]) => (
               <span key={option} className="menu-tally-item">🍹 {option} {count}</span>
-            ))}
-          </div>
-        )}
-        {selectedTab === 'attending' && mealTallyEntries.length > 0 && (
-          <div className="menu-tally">
-            {mealTallyEntries.map(([meal, count]) => (
-              <span key={meal} className="menu-tally-item meal-tally-item">🍽️ {meal} {count}</span>
             ))}
           </div>
         )}

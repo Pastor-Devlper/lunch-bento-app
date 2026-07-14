@@ -129,19 +129,18 @@ export default function App() {
   const myAttending = me?.attending ?? null;
   const myNote = me?.note ?? null;
   const myOptions = me?.menuOptions ?? [];
-  const myMeal = me?.meal ?? null;
   const menuOptions = selectedEvent?.menuOptions ?? [];
 
   function handleSetAttending(attending) {
     setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, attending } : p)));
-    putEventResponse(selectedEventId, personId, { attending, note: myNote, menuOptions: myOptions, meal: myMeal })
+    putEventResponse(selectedEventId, personId, { attending, note: myNote, menuOptions: myOptions, meal: null })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
 
   function handleSetNote(note) {
     setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, note } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note, menuOptions: myOptions, meal: myMeal })
+    putEventResponse(selectedEventId, personId, { attending: myAttending, note, menuOptions: myOptions, meal: null })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
@@ -157,7 +156,7 @@ export default function App() {
       nextOptions = myOptions.includes(option) ? [] : [option];
     }
     setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, menuOptions: nextOptions } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: nextOptions, meal: myMeal })
+    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: nextOptions, meal: null })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
@@ -169,13 +168,6 @@ export default function App() {
         setEvents((prev) => prev.map((e) => (e.id === selectedEventId ? { ...e, menuOptions: updated } : e)));
       })
       .catch(() => {});
-  }
-
-  function handleSetMeal(meal) {
-    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, meal } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: myOptions, meal })
-      .then(() => refreshResponses())
-      .catch(() => refreshResponses());
   }
 
   function handleToggleReminder() {
@@ -253,16 +245,13 @@ export default function App() {
         myAttending={myAttending}
         myNote={myNote}
         myOptions={myOptions}
-        myMeal={myMeal}
         menuEnabled={Boolean(selectedEvent?.menuEnabled)}
         menuOptions={menuOptions}
         multiSelect={selectedEvent?.multiSelect ?? true}
-        mealEnabled={Boolean(selectedEvent?.mealEnabled)}
         onSetAttending={handleSetAttending}
         onSetNote={handleSetNote}
         onToggleOption={handleToggleOption}
         onAddOption={handleAddOption}
-        onSetMeal={handleSetMeal}
       />
 
       <SummaryStats

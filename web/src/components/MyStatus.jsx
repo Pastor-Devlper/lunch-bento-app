@@ -45,8 +45,8 @@ function MenuPicker({ menuOptions, myOptions, multiSelect, onToggleOption, onAdd
 }
 
 export default function MyStatus({
-  myAttending, myNote, myOptions, myMeal, menuEnabled, menuOptions, multiSelect, mealEnabled,
-  onSetAttending, onSetNote, onToggleOption, onAddOption, onSetMeal,
+  myAttending, myNote, myOptions, menuEnabled, menuOptions, multiSelect,
+  onSetAttending, onSetNote, onToggleOption, onAddOption,
 }) {
   const [note, setNote] = useState(myNote || '');
 
@@ -77,28 +77,6 @@ export default function MyStatus({
           </button>
         </div>
       </div>
-
-      {mealEnabled && myAttending === true && (
-        <div style={{ marginBottom: 20 }}>
-          <div className="my-status-title my-status-subtitle">식사 여부</div>
-          <div className="meal-options">
-            <button
-              type="button"
-              className={`meal-btn${myMeal === '먹음' ? ' selected' : ''}`}
-              onClick={() => onSetMeal('먹음')}
-            >
-              🍽️ 먹음
-            </button>
-            <button
-              type="button"
-              className={`meal-btn${myMeal === '안먹음' ? ' selected' : ''}`}
-              onClick={() => onSetMeal('안먹음')}
-            >
-              × 안먹음
-            </button>
-          </div>
-        </div>
-      )}
 
       {menuEnabled && myAttending === true && (
         <div style={{ marginBottom: 20 }}>
