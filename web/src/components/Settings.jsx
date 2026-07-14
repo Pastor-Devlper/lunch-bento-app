@@ -1,4 +1,4 @@
-export default function Settings({ reminderEnabled, onToggle, onDelete }) {
+export default function Settings({ onDelete }) {
   function handleDelete() {
     if (confirm('정말 이 명단에서 삭제하시겠어요?')) {
       onDelete();
@@ -15,10 +15,10 @@ export default function Settings({ reminderEnabled, onToggle, onDelete }) {
         </span>
         <button
           type="button"
-          className={`toggle${reminderEnabled ? ' active' : ''}`}
-          onClick={onToggle}
-          aria-pressed={reminderEnabled}
-          aria-label="알림 받기"
+          className="toggle"
+          disabled
+          aria-pressed={false}
+          aria-label="알림 받기 (준비중)"
         >
           <div className="toggle-circle"></div>
         </button>

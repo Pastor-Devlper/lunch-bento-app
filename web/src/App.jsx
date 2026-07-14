@@ -11,7 +11,6 @@ import EventList from './components/EventList.jsx';
 import {
   fetchPeople, fetchDepartments, addPerson, deletePerson,
   fetchEvents, createEvent, deleteEvent, addMenuOption, fetchEventResponses, putEventResponse,
-  fetchSettings, putSettings,
 } from './api.js';
 import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
 
@@ -32,7 +31,6 @@ export default function App() {
   const [eventError, setEventError] = useState('');
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [reminderEnabled, setReminderEnabled] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [pickerError, setPickerError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -64,8 +62,7 @@ export default function App() {
       return;
     }
     setLoading(true);
-    Promise.all([refreshEvents(), fetchSettings(personId).then((s) => setReminderEnabled(s.reminderEnabled))])
-      .finally(() => setLoading(false));
+    refreshEvents().finally(() => setLoading(false));
   }, [personId, refreshEvents]);
 
   const refreshResponses = useCallback(() => {
@@ -177,12 +174,6 @@ export default function App() {
       .catch(() => {});
   }
 
-  function handleToggleReminder() {
-    const next = !reminderEnabled;
-    setReminderEnabled(next);
-    putSettings(personId, { reminderEnabled: next }).catch(() => setReminderEnabled(!next));
-  }
-
   function handleDeleteUser() {
     deletePerson(personId)
       .then(() => {
@@ -276,7 +267,7 @@ export default function App() {
         myPersonId={personId}
       />
 
-      <Settings reminderEnabled={reminderEnabled} onToggle={handleToggleReminder} onDelete={handleDeleteUser} />
+      <Settings onDelete={handleDeleteUser} />
 
       <Footer lastUpdated={lastUpdated} />
     </div>

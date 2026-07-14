@@ -315,6 +315,11 @@ button {
   background: #4ECDC4;
 }
 
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .toggle-circle {
   width: 24px;
   height: 24px;
