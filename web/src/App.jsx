@@ -39,7 +39,18 @@ export default function App() {
   const [selectedTab, setSelectedTab] = useState('attending');
 
   useEffect(() => {
-    fetchPeople().then(setPeople).catch(() => setPickerError('명단을 불러오지 못했어요. 새로고침해주세요.'));
+    fetchPeople()
+      .then((rows) => {
+        setPeople(rows);
+        // Stale identity from before a data migration (or a deleted person)
+        // won't match any current id — drop back to the name picker instead
+        // of failing every request with "unknown person".
+        if (personId != null && !rows.some((p) => p.id === personId)) {
+          localStorage.removeItem(IDENTITY_KEY);
+          setPersonId(null);
+        }
+      })
+      .catch(() => setPickerError('명단을 불러오지 못했어요. 새로고침해주세요.'));
     fetchDepartments().then(setDepartments).catch(() => {});
   }, []);
 
