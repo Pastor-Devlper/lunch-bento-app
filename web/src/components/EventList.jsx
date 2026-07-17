@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatKoreanDateFromISO } from '../dateUtils.js';
+import { shareEvent } from '../kakao.js';
 
 function NewEventForm({ onCreate, onDone }) {
   const [title, setTitle] = useState('');
@@ -82,6 +83,11 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
     onDelete(eventId, password);
   }
 
+  function handleShare(e, event) {
+    e.stopPropagation();
+    shareEvent(event);
+  }
+
   return (
     <div className="picker-container event-list-container">
       <div className="picker-title">📋 이벤트 참석 현황</div>
@@ -112,6 +118,13 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
               <span className="event-card-count event-card-count-absent">미참석 {event.absentCount}</span>
               <span className="event-card-count event-card-count-pending">미응답 {event.pendingCount}</span>
             </div>
+            <button
+              type="button"
+              className="event-card-share"
+              onClick={(e) => handleShare(e, event)}
+            >
+              💬 카톡 공유
+            </button>
             <button
               type="button"
               className="event-card-delete"

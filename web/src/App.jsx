@@ -13,6 +13,7 @@ import {
   fetchEvents, createEvent, deleteEvent, addMenuOption, removeMenuOption, fetchEventResponses, putEventResponse,
 } from './api.js';
 import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
+import { initKakao } from './kakao.js';
 
 const IDENTITY_KEY = 'lunchbento.personId';
 const AUTH_KEY = 'authenticated';
@@ -35,6 +36,13 @@ export default function App() {
   const [pickerError, setPickerError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('attending');
+  const [pendingEventId, setPendingEventId] = useState(() => (
+    new URLSearchParams(window.location.search).get('event')
+  ));
+
+  useEffect(() => {
+    initKakao();
+  }, []);
 
   useEffect(() => {
     fetchPeople()
@@ -64,6 +72,17 @@ export default function App() {
     setLoading(true);
     refreshEvents().finally(() => setLoading(false));
   }, [personId, refreshEvents]);
+
+  // Land straight on the shared event once it shows up in the fetched list.
+  useEffect(() => {
+    if (pendingEventId && events.some((e) => e.id === pendingEventId)) {
+      setSelectedEventId(pendingEventId);
+      setPendingEventId(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('event');
+      window.history.replaceState({}, '', url);
+    }
+  }, [pendingEventId, events]);
 
   const refreshResponses = useCallback(() => {
     if (selectedEventId == null) return Promise.resolve();

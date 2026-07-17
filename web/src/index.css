@@ -776,6 +776,24 @@ button {
 .event-card-count-absent { color: #FF6B6B; }
 .event-card-count-pending { color: #A0AEC0; }
 
+.event-card-share {
+  align-self: flex-start;
+  border: 1px solid #FEE500;
+  background: #FEE500;
+  color: #3C1E1E;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.event-card-share:hover {
+  filter: brightness(0.95);
+}
+
 .event-card-delete {
   position: absolute;
   top: 10px;
