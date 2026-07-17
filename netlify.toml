@@ -5,4 +5,4 @@
 
 [build.environment]
   VITE_API_BASE = "https://lunch-bento-server.onrender.com/api"
-  VITE_KAKAO_JS_KEY = "fb89f4af150709eba3f64d8a6a20a2a"
+  VITE_KAKAO_JS_KEY = "7fb89f4af150709eba3f64d8a6a20a2a"
