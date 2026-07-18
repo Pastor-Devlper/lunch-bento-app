@@ -113,18 +113,20 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
               <div className="event-card-title">{event.menuEnabled && '🍹 '}{event.mealEnabled && '🍽️ '}{event.title}</div>
               {event.eventDate && <div className="event-card-date">{formatKoreanDateFromISO(event.eventDate)}</div>}
             </div>
-            <div className="event-card-counts">
-              <span className="event-card-count event-card-count-attending">참석 {event.attendingCount}</span>
-              <span className="event-card-count event-card-count-absent">미참석 {event.absentCount}</span>
-              <span className="event-card-count event-card-count-pending">미응답 {event.pendingCount}</span>
+            <div className="event-card-footer">
+              <div className="event-card-counts">
+                <span className="event-card-count event-card-count-attending">참석 {event.attendingCount}</span>
+                <span className="event-card-count event-card-count-absent">미참석 {event.absentCount}</span>
+                <span className="event-card-count event-card-count-pending">미응답 {event.pendingCount}</span>
+              </div>
+              <button
+                type="button"
+                className="event-card-share"
+                onClick={(e) => handleShare(e, event)}
+              >
+                💬 카톡 공유
+              </button>
             </div>
-            <button
-              type="button"
-              className="event-card-share"
-              onClick={(e) => handleShare(e, event)}
-            >
-              💬 카톡 공유
-            </button>
             <button
               type="button"
               className="event-card-delete"

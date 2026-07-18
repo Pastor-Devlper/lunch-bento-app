@@ -765,6 +765,15 @@ button {
   color: #999;
 }
 
+.event-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
 .event-card-counts {
   display: flex;
   gap: 12px;
@@ -772,12 +781,16 @@ button {
   font-weight: 600;
 }
 
+.event-card-count {
+  white-space: nowrap;
+}
+
 .event-card-count-attending { color: #4ECDC4; }
 .event-card-count-absent { color: #FF6B6B; }
 .event-card-count-pending { color: #A0AEC0; }
 
 .event-card-share {
-  align-self: flex-start;
+  flex-shrink: 0;
   border: 1px solid #FEE500;
   background: #FEE500;
   color: #3C1E1E;
