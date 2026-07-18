@@ -217,8 +217,8 @@ export default function App() {
       .catch(() => {});
   }
 
-  function handleDeletePerson(id, password) {
-    deletePerson(id, password)
+  function handleDeletePerson(id) {
+    deletePerson(id)
       .then(() => {
         setPeople((prev) => prev.filter((p) => p.id !== id));
         if (id === personId) handleSwitchUser();

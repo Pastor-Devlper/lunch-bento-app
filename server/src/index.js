@@ -67,13 +67,9 @@ app.post('/api/people', async (req, res) => {
   res.status(201).json({ id: result.insertedId.toString(), name, department });
 });
 
-// Delete a person. Requires the delete password.
+// Delete a person
 app.delete('/api/people/:personId', async (req, res) => {
   const personId = toObjectId(req.params.personId);
-  const { password } = req.body;
-  if (password !== DELETE_PASSWORD) {
-    return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
-  }
   if (!personId) {
     return res.status(404).json({ error: 'unknown person' });
   }

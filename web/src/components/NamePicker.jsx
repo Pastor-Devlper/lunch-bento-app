@@ -48,10 +48,9 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
   }
 
   function handleDeleteClick(person) {
-    if (!confirm(`'${person.name}'님을 명단에서 삭제할까요?`)) return;
-    const password = prompt('삭제 비밀번호를 입력하세요');
-    if (password === null) return;
-    onDelete(person.id, password);
+    if (confirm(`'${person.name}'님을 명단에서 삭제할까요?`)) {
+      onDelete(person.id);
+    }
   }
 
   return (
