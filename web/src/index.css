@@ -335,23 +335,6 @@ button {
   left: 22px;
 }
 
-.delete-btn {
-  padding: 8px 16px;
-  background: #FF6B6B;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.delete-btn:hover {
-  background: #FF5252;
-  transform: translateY(-2px);
-}
-
 /* My Status Section */
 .my-status-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -635,6 +618,45 @@ button {
 .picker-btn:hover {
   background: #E8F8F5;
   border-color: #4ECDC4;
+}
+
+.picker-btn.deleting {
+  background: #FFE8E8;
+  border-color: #FF6B6B;
+  color: #FF6B6B;
+}
+
+.picker-btn.deleting:hover {
+  background: #FFD6D6;
+  border-color: #FF5252;
+}
+
+.picker-delete-btn {
+  flex: 0 0 calc((100% - 16px) / 3);
+  padding: 10px 16px;
+  background: transparent;
+  border: 2px dashed #f0c0c0;
+  border-radius: 12px;
+  color: #d98a8a;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-width: 0;
+}
+
+.picker-delete-btn:hover {
+  border-color: #FF6B6B;
+  color: #FF6B6B;
+  background: #FFE8E8;
+}
+
+.picker-delete-btn.active {
+  background: #FF6B6B;
+  border-style: solid;
+  border-color: #FF6B6B;
+  color: white;
 }
 
 .picker-add-btn {

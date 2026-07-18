@@ -37,13 +37,20 @@ function AddPersonForm({ department, onAdd, onDone }) {
   );
 }
 
-export default function NamePicker({ people, departments, onSelect, onAdd, error }) {
+export default function NamePicker({ people, departments, onSelect, onAdd, onDelete, error }) {
   const [addingDept, setAddingDept] = useState(null);
+  const [deletingDept, setDeletingDept] = useState(null);
 
   function handleAdd(name, department) {
     return onAdd(name, department).then(() => {
       setAddingDept(null);
     });
+  }
+
+  function handleDeleteClick(person) {
+    if (confirm(`'${person.name}'님을 명단에서 삭제할까요?`)) {
+      onDelete(person.id);
+    }
   }
 
   return (
@@ -53,6 +60,7 @@ export default function NamePicker({ people, departments, onSelect, onAdd, error
 
       {departments.map((department) => {
         const members = people.filter((p) => p.department === department);
+        const isDeleting = deletingDept === department;
         return (
           <div className="picker-department" key={department}>
             <div className="picker-department-title">{department}</div>
@@ -61,10 +69,10 @@ export default function NamePicker({ people, departments, onSelect, onAdd, error
                 <button
                   key={person.id}
                   type="button"
-                  className="picker-btn"
-                  onClick={() => onSelect(person.id)}
+                  className={`picker-btn${isDeleting ? ' deleting' : ''}`}
+                  onClick={() => (isDeleting ? handleDeleteClick(person) : onSelect(person.id))}
                 >
-                  {person.name}
+                  {isDeleting && '🗑 '}{person.name}
                 </button>
               ))}
               {addingDept === department ? (
@@ -74,13 +82,25 @@ export default function NamePicker({ people, departments, onSelect, onAdd, error
                   onDone={() => setAddingDept(null)}
                 />
               ) : (
-                <button
-                  type="button"
-                  className="picker-add-btn"
-                  onClick={() => setAddingDept(department)}
-                >
-                  + 추가
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="picker-add-btn"
+                    onClick={() => {
+                      setAddingDept(department);
+                      setDeletingDept(null);
+                    }}
+                  >
+                    + 추가
+                  </button>
+                  <button
+                    type="button"
+                    className={`picker-delete-btn${isDeleting ? ' active' : ''}`}
+                    onClick={() => setDeletingDept(isDeleting ? null : department)}
+                  >
+                    {isDeleting ? '완료' : '삭제'}
+                  </button>
+                </>
               )}
             </div>
           </div>

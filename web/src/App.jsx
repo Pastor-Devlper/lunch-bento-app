@@ -205,11 +205,11 @@ export default function App() {
       .catch(() => {});
   }
 
-  function handleDeleteUser() {
-    deletePerson(personId)
+  function handleDeletePerson(id) {
+    deletePerson(id)
       .then(() => {
-        setPeople((prev) => prev.filter((p) => p.id !== personId));
-        handleSwitchUser();
+        setPeople((prev) => prev.filter((p) => p.id !== id));
+        if (id === personId) handleSwitchUser();
       })
       .catch(() => alert('삭제하지 못했어요'));
   }
@@ -226,6 +226,7 @@ export default function App() {
           departments={departments}
           onSelect={handleSelectPerson}
           onAdd={handleAddPerson}
+          onDelete={handleDeletePerson}
           error={pickerError}
         />
       </div>
@@ -299,7 +300,7 @@ export default function App() {
         myPersonId={personId}
       />
 
-      <Settings onDelete={handleDeleteUser} />
+      <Settings />
 
       <Footer lastUpdated={lastUpdated} />
     </div>
