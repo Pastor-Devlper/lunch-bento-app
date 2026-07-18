@@ -26,6 +26,9 @@ export default function App() {
   const [people, setPeople] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [personId, setPersonId] = useState(() => {
+    // Opened from a shared event link: always start at the name picker so the
+    // recipient chooses their own name instead of the last-used identity.
+    if (new URLSearchParams(window.location.search).get('event')) return null;
     return localStorage.getItem(IDENTITY_KEY) || null;
   });
   const [events, setEvents] = useState([]);
@@ -36,6 +39,7 @@ export default function App() {
   const [pickerError, setPickerError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('attending');
+  const [eventsLoaded, setEventsLoaded] = useState(false);
   const [pendingEventId, setPendingEventId] = useState(() => (
     new URLSearchParams(window.location.search).get('event')
   ));
@@ -70,19 +74,24 @@ export default function App() {
       return;
     }
     setLoading(true);
-    refreshEvents().finally(() => setLoading(false));
+    refreshEvents().finally(() => {
+      setEventsLoaded(true);
+      setLoading(false);
+    });
   }, [personId, refreshEvents]);
 
-  // Land straight on the shared event once it shows up in the fetched list.
+  // Once the roster is picked and events have loaded, resolve a shared link:
+  // jump into that event, or fall back to the list if it no longer exists.
   useEffect(() => {
-    if (pendingEventId && events.some((e) => e.id === pendingEventId)) {
+    if (!pendingEventId || !eventsLoaded) return;
+    if (events.some((e) => e.id === pendingEventId)) {
       setSelectedEventId(pendingEventId);
-      setPendingEventId(null);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('event');
-      window.history.replaceState({}, '', url);
     }
-  }, [pendingEventId, events]);
+    setPendingEventId(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('event');
+    window.history.replaceState({}, '', url);
+  }, [pendingEventId, eventsLoaded, events]);
 
   const refreshResponses = useCallback(() => {
     if (selectedEventId == null) return Promise.resolve();
@@ -233,7 +242,7 @@ export default function App() {
     );
   }
 
-  if (loading) {
+  if (loading || pendingEventId) {
     return (
       <div className="app-container">
         <div className="header">
