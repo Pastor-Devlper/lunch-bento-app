@@ -35,9 +35,10 @@ export function addPerson({ name, department }) {
   });
 }
 
-export function deletePerson(personId) {
+export function deletePerson(personId, password) {
   return request(`/people/${personId}`, {
     method: 'DELETE',
+    body: JSON.stringify({ password }),
   });
 }
 

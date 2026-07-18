@@ -21,6 +21,9 @@ const POLL_MS = 10000;
 
 export default function App() {
   const [authenticated, setAuthenticated] = useState(() => {
+    // Shared event links skip the entry password so recipients can respond
+    // right away; the password isn't persisted, so bare-URL access still asks.
+    if (new URLSearchParams(window.location.search).get('event')) return true;
     return localStorage.getItem(AUTH_KEY) === 'true';
   });
   const [people, setPeople] = useState([]);
@@ -214,13 +217,13 @@ export default function App() {
       .catch(() => {});
   }
 
-  function handleDeletePerson(id) {
-    deletePerson(id)
+  function handleDeletePerson(id, password) {
+    deletePerson(id, password)
       .then(() => {
         setPeople((prev) => prev.filter((p) => p.id !== id));
         if (id === personId) handleSwitchUser();
       })
-      .catch(() => alert('삭제하지 못했어요'));
+      .catch((err) => alert(err.message || '삭제하지 못했어요'));
   }
 
   if (!authenticated) {
