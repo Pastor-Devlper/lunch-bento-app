@@ -6,15 +6,15 @@ if (!uri) {
 }
 
 const client = new MongoClient(uri);
-await client.connect();
 
+// The MongoDB driver hands back Db/Collection handles without waiting for a
+// live connection, and buffers operations until it connects. That lets the
+// HTTP server bind its port immediately (so Render's deploy health check
+// passes) while the actual connection + seeding happen in the background.
 export const db = client.db('lunch_bento');
 export const people = db.collection('people');
 export const events = db.collection('events');
 export const eventResponses = db.collection('event_responses');
-
-await eventResponses.createIndex({ eventId: 1, personId: 1 }, { unique: true });
-await people.createIndex({ name: 1 }, { unique: true });
 
 export const DEPARTMENTS = [
   '원장', '총무국', '출판국', '지운국', '훈련국', 'Pearl', 'YRG', 'Kids', '방문',
@@ -31,10 +31,20 @@ const ROSTER = [
   ['Kids', '권은미'],
 ];
 
-for (const [department, name] of ROSTER) {
-  await people.updateOne(
-    { name },
-    { $setOnInsert: { name, department, reminderEnabled: true } },
-    { upsert: true },
-  );
+async function init() {
+  await client.connect();
+  await eventResponses.createIndex({ eventId: 1, personId: 1 }, { unique: true });
+  await people.createIndex({ name: 1 }, { unique: true });
+  for (const [department, name] of ROSTER) {
+    await people.updateOne(
+      { name },
+      { $setOnInsert: { name, department, reminderEnabled: true } },
+      { upsert: true },
+    );
+  }
+  console.log('MongoDB connected and roster seeded');
 }
+
+init().catch((err) => {
+  console.error('MongoDB init failed:', err);
+});
