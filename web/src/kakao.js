@@ -18,7 +18,7 @@ export function shareEvent(event) {
   const shareUrl = url.toString();
 
   const dateText = event.eventDate ? `\n${event.eventDate}` : '';
-  const text = `📋 ${event.title}${dateText}\n참석 ${event.attendingCount} · 미참석 ${event.absentCount} · 미응답 ${event.pendingCount}\n\n아래 링크에서 참석 여부를 알려주세요!`;
+  const text = `【 ${event.title} 】${dateText}\n참석 ${event.attendingCount} · 미참석 ${event.absentCount} · 미응답 ${event.pendingCount}\n\n아래 링크에서 참석 여부를 알려주세요!`;
 
   window.Kakao.Share.sendDefault({
     objectType: 'text',
