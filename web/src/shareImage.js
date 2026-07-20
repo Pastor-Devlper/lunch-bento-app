@@ -5,12 +5,20 @@ import { toBlob } from 'html-to-image';
 export async function shareElementImage(el, { filename = 'image.png', title = '' } = {}) {
   if (!el) return;
 
-  const blob = await toBlob(el, {
-    pixelRatio: 2,
-    cacheBust: true,
-    // Skip any element marked data-no-capture (e.g. the share button itself).
-    filter: (node) => !(node.dataset && node.dataset.noCapture),
-  });
+  // Hide elements marked data-no-capture (e.g. the share button) in the real
+  // DOM before capturing, so the layout reflows (the count lands at the far
+  // right) — html-to-image's own filter doesn't trigger a reflow. Restore
+  // afterwards.
+  const hidden = Array.from(el.querySelectorAll('[data-no-capture]'));
+  const prevDisplay = hidden.map((n) => n.style.display);
+  hidden.forEach((n) => { n.style.display = 'none'; });
+
+  let blob;
+  try {
+    blob = await toBlob(el, { pixelRatio: 2, cacheBust: true });
+  } finally {
+    hidden.forEach((n, i) => { n.style.display = prevDisplay[i]; });
+  }
   if (!blob) throw new Error('이미지를 만들지 못했어요');
 
   const file = new File([blob], filename, { type: 'image/png' });

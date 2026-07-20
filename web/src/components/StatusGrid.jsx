@@ -32,19 +32,17 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
     <div className="status-grid-container">
       <div className={`status-column status-${selectedTab}`} ref={columnRef}>
         <div className="status-header">
-          <span>{currentTab.icon} {currentTab.title}</span>
-          <div className="status-header-right">
-            <button
-              type="button"
-              className="status-share-btn"
-              data-no-capture="true"
-              onClick={handleShareImage}
-              aria-label="이미지로 공유"
-            >
-              📷 이미지로 공유
-            </button>
-            <span className="status-count">{currentTab.people.length}</span>
-          </div>
+          <span className="status-title">{currentTab.icon} {currentTab.title}</span>
+          <button
+            type="button"
+            className="status-share-btn"
+            data-no-capture="true"
+            onClick={handleShareImage}
+            aria-label="이미지로 공유"
+          >
+            📷 이미지로 공유
+          </button>
+          <span className="status-count">{currentTab.people.length}</span>
         </div>
         <div className="status-list status-list-3col">
           {currentTab.people.length === 0 && <div className="empty-hint">{currentTab.emptyText}</div>}

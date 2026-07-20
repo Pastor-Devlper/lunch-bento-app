@@ -156,7 +156,11 @@ button {
   border-bottom: 3px solid;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-title {
+  margin-right: auto;
 }
 
 .status-attending .status-header {
@@ -175,12 +179,6 @@ button {
   background: #F7F9FC;
   border-bottom-color: #A0AEC0;
   color: #A0AEC0;
-}
-
-.status-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .status-share-btn {
@@ -233,7 +231,6 @@ button {
 .menu-tally {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 8px;
   padding: 0 16px 16px;
 }
