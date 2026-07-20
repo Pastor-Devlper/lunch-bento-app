@@ -177,6 +177,30 @@ button {
   color: #A0AEC0;
 }
 
+.status-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-share-btn {
+  border: 1px solid currentColor;
+  background: rgba(255, 255, 255, 0.6);
+  color: inherit;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.status-share-btn:hover {
+  background: white;
+}
+
 .status-count {
   font-size: 20px;
   font-weight: 700;

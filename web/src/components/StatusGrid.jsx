@@ -1,4 +1,9 @@
-export default function StatusGrid({ attendingPeople, absentPeople, pendingPeople, selectedTab, myPersonId }) {
+import { useRef } from 'react';
+import { shareElementImage } from '../shareImage.js';
+
+export default function StatusGrid({ attendingPeople, absentPeople, pendingPeople, selectedTab, myPersonId, eventTitle }) {
+  const columnRef = useRef(null);
+
   const tabs = [
     { id: 'attending', icon: '✓', title: '참석', people: attendingPeople, emptyText: '아직 참석자가 없어요' },
     { id: 'absent', icon: '✗', title: '미참석', people: absentPeople, emptyText: '아직 없어요' },
@@ -15,12 +20,31 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
   }, {});
   const menuTallyEntries = Object.entries(menuTally);
 
+  function handleShareImage() {
+    const name = `${eventTitle || '참석현황'}-${currentTab.title}`;
+    shareElementImage(columnRef.current, {
+      filename: `${name}.png`,
+      title: name,
+    }).catch(() => alert('이미지를 공유하지 못했어요'));
+  }
+
   return (
     <div className="status-grid-container">
-      <div className={`status-column status-${selectedTab}`}>
+      <div className={`status-column status-${selectedTab}`} ref={columnRef}>
         <div className="status-header">
           <span>{currentTab.icon} {currentTab.title}</span>
-          <span className="status-count">{currentTab.people.length}</span>
+          <div className="status-header-right">
+            <button
+              type="button"
+              className="status-share-btn"
+              data-no-capture="true"
+              onClick={handleShareImage}
+              aria-label="이미지로 공유"
+            >
+              📷 이미지로 공유
+            </button>
+            <span className="status-count">{currentTab.people.length}</span>
+          </div>
         </div>
         <div className="status-list status-list-3col">
           {currentTab.people.length === 0 && <div className="empty-hint">{currentTab.emptyText}</div>}

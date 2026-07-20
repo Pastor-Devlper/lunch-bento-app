@@ -310,6 +310,7 @@ export default function App() {
         pendingPeople={pendingPeople}
         selectedTab={selectedTab}
         myPersonId={personId}
+        eventTitle={selectedEvent?.title}
       />
 
       <Settings />
