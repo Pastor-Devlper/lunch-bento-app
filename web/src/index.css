@@ -700,6 +700,8 @@ button {
   font-family: inherit;
   outline: none;
   grid-column: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 .picker-add-confirm {
