@@ -218,6 +218,12 @@ button {
   gap: 12px;
 }
 
+@media (min-width: 768px) {
+  .status-list-3col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .status-pending {
   grid-column: 1 / -1;
 }
