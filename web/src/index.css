@@ -633,14 +633,15 @@ button {
 }
 
 .picker-delete-btn {
-  flex: 0 0 calc((100% - 16px) / 3);
-  padding: 10px 16px;
+  flex: 0 0 calc(((100% - 16px) / 3 - 8px) / 2);
+  padding: 10px 0;
   background: transparent;
   border: 2px dashed #f0c0c0;
   border-radius: 12px;
   color: #d98a8a;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
@@ -661,14 +662,15 @@ button {
 }
 
 .picker-add-btn {
-  flex: 0 0 calc((100% - 16px) / 3);
-  padding: 10px 16px;
+  flex: 0 0 calc(((100% - 16px) / 3 - 8px) / 2);
+  padding: 10px 0;
   background: transparent;
   border: 2px dashed #ddd;
   border-radius: 12px;
   color: #999;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;

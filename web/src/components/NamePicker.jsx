@@ -90,15 +90,17 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
                       setAddingDept(department);
                       setDeletingDept(null);
                     }}
+                    aria-label="이름 추가"
                   >
-                    + 추가
+                    +
                   </button>
                   <button
                     type="button"
                     className={`picker-delete-btn${isDeleting ? ' active' : ''}`}
                     onClick={() => setDeletingDept(isDeleting ? null : department)}
+                    aria-label={isDeleting ? '삭제 완료' : '이름 삭제'}
                   >
-                    {isDeleting ? '완료' : '삭제'}
+                    −
                   </button>
                 </>
               )}
