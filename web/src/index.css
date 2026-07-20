@@ -684,10 +684,10 @@ button {
 }
 
 .picker-add-form {
-  flex: 0 0 calc((100% - 16px) / 3);
+  flex: 0 0 100%;
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 4px;
+  gap: 8px;
   padding: 0;
   min-width: 0;
 }
