@@ -2,7 +2,7 @@ import { toBlob } from 'html-to-image';
 
 // Capture a DOM element as a PNG and share it as a file (mobile share sheet,
 // which includes KakaoTalk) or fall back to a download.
-export async function shareElementImage(el, { filename = 'image.png', title = '' } = {}) {
+export async function shareElementImage(el, { filename = 'image.png' } = {}) {
   if (!el) return;
 
   // Hide elements marked data-no-capture (e.g. the share button) in the real
@@ -25,7 +25,9 @@ export async function shareElementImage(el, { filename = 'image.png', title = ''
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title });
+      // Only share the image file — no title/text, so KakaoTalk doesn't
+      // attach a separate text message alongside the photo.
+      await navigator.share({ files: [file] });
       return;
     } catch (err) {
       if (err.name === 'AbortError') return; // user cancelled

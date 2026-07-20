@@ -24,7 +24,6 @@ export default function StatusGrid({ attendingPeople, absentPeople, pendingPeopl
     const name = `${eventTitle || '참석현황'}-${currentTab.title}`;
     shareElementImage(columnRef.current, {
       filename: `${name}.png`,
-      title: name,
     }).catch(() => alert('이미지를 공유하지 못했어요'));
   }
 
