@@ -233,6 +233,7 @@ button {
 .menu-tally {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   padding: 0 16px 16px;
 }
