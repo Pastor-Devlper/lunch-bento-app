@@ -40,13 +40,16 @@ function NewEventForm({ onCreate, onDone }) {
         disabled={submitting}
         autoFocus
       />
-      <input
-        type="date"
-        className="event-new-input"
-        value={eventDate}
-        onChange={(e) => setEventDate(e.target.value)}
-        disabled={submitting}
-      />
+      <label className="event-new-date">
+        <span className="event-new-date-label">📅 날짜 (선택)</span>
+        <input
+          type="date"
+          className="event-new-input event-new-date-input"
+          value={eventDate}
+          onChange={(e) => setEventDate(e.target.value)}
+          disabled={submitting}
+        />
+      </label>
       <textarea
         className="event-new-input"
         placeholder="설명 (선택)"

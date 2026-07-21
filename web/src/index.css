@@ -918,6 +918,29 @@ button {
   resize: vertical;
 }
 
+.event-new-date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid #4ECDC4;
+  border-radius: 12px;
+  padding: 4px 6px 4px 14px;
+}
+
+.event-new-date-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.event-new-date-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 8px 8px;
+}
+
 .event-new-checkbox {
   display: flex;
   align-items: center;
