@@ -40,6 +40,7 @@ function AddPersonForm({ department, onAdd, onDone }) {
 export default function NamePicker({ people, departments, onSelect, onAdd, onDelete, error }) {
   const [addingDept, setAddingDept] = useState(null);
   const [deletingDept, setDeletingDept] = useState(null);
+  const [deletingPerson, setDeletingPerson] = useState(null);
 
   function handleAdd(name, department) {
     return onAdd(name, department).then(() => {
@@ -48,9 +49,7 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
   }
 
   function handleDeleteClick(person) {
-    if (confirm(`'${person.name}'님을 명단에서 삭제할까요?`)) {
-      onDelete(person.id);
-    }
+    setDeletingPerson(person);
   }
 
   return (
@@ -110,6 +109,36 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
       })}
 
       {error && <div className="picker-error">{error}</div>}
+
+      {deletingPerson && (
+        <div className="modal-overlay" onClick={() => setDeletingPerson(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">명단에서 삭제</div>
+            <div className="modal-text">
+              '{deletingPerson.name}'님을 명단에서 삭제할까요?
+            </div>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="modal-btn-danger"
+                onClick={() => {
+                  onDelete(deletingPerson.id);
+                  setDeletingPerson(null);
+                }}
+              >
+                삭제
+              </button>
+              <button
+                type="button"
+                className="modal-btn-cancel"
+                onClick={() => setDeletingPerson(null)}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
