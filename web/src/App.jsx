@@ -9,92 +9,68 @@ import NamePicker from './components/NamePicker.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import EventList from './components/EventList.jsx';
 import {
-  fetchPeople, fetchDepartments, addPerson, deletePerson,
-  fetchEvents, createEvent, deleteEvent, addMenuOption, removeMenuOption, fetchEventResponses, putEventResponse,
+  fetchDepartments, fetchPeople, addPerson, deletePerson, verifyRosterPassword,
+  fetchEvents, createEvent, deleteEvent,
+  addParticipant, removeParticipant,
+  addMenuOption, removeMenuOption, fetchEventResponses, putEventResponse,
 } from './api.js';
 import { formatKoreanDateFromISO, formatTime } from './dateUtils.js';
 import { initKakao } from './kakao.js';
 
-const IDENTITY_KEY = 'lunchbento.personId';
 const AUTH_KEY = 'authenticated';
 const POLL_MS = 10000;
 
+const identityKey = (eventId) => `lunchbento.person.${eventId}`;
+
 export default function App() {
   const [authenticated, setAuthenticated] = useState(() => {
-    // Shared event links skip the entry password so recipients can respond
-    // right away; the password isn't persisted, so bare-URL access still asks.
     if (new URLSearchParams(window.location.search).get('event')) return true;
     return localStorage.getItem(AUTH_KEY) === 'true';
   });
-  const [people, setPeople] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [personId, setPersonId] = useState(() => {
-    // Opened from a shared event link: always start at the name picker so the
-    // recipient chooses their own name instead of the last-used identity.
-    if (new URLSearchParams(window.location.search).get('event')) return null;
-    return localStorage.getItem(IDENTITY_KEY) || null;
-  });
   const [events, setEvents] = useState([]);
   const [eventError, setEventError] = useState('');
-  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(() =>
+    new URLSearchParams(window.location.search).get('event') || null);
   const [responses, setResponses] = useState([]);
+  const [eventIdentity, setEventIdentity] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [pickerError, setPickerError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loadingEvent, setLoadingEvent] = useState(false);
   const [selectedTab, setSelectedTab] = useState('attending');
-  const [eventsLoaded, setEventsLoaded] = useState(false);
-  const [pendingEventId, setPendingEventId] = useState(() => (
-    new URLSearchParams(window.location.search).get('event')
-  ));
+
+  // Base-roster admin
+  const [rosterPasswordModal, setRosterPasswordModal] = useState(false);
+  const [rosterPassword, setRosterPassword] = useState(null);
+  const [rosterPeople, setRosterPeople] = useState([]);
+  const [rosterError, setRosterError] = useState('');
 
   useEffect(() => {
     initKakao();
-  }, []);
-
-  useEffect(() => {
-    fetchPeople()
-      .then((rows) => {
-        setPeople(rows);
-        // Stale identity from before a data migration (or a deleted person)
-        // won't match any current id — drop back to the name picker instead
-        // of failing every request with "unknown person".
-        if (personId != null && !rows.some((p) => p.id === personId)) {
-          localStorage.removeItem(IDENTITY_KEY);
-          setPersonId(null);
-        }
-      })
-      .catch(() => setPickerError('명단을 불러오지 못했어요. 새로고침해주세요.'));
     fetchDepartments().then(setDepartments).catch(() => {});
+    // Drop the ?event= param from the URL once we've captured it.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('event')) {
+      url.searchParams.delete('event');
+      window.history.replaceState({}, '', url);
+    }
   }, []);
 
-  const refreshEvents = useCallback(() => {
-    return fetchEvents().then(setEvents).catch(() => setEventError('이벤트 목록을 불러오지 못했어요.'));
-  }, []);
+  const refreshEvents = useCallback(() =>
+    fetchEvents().then(setEvents).catch(() => setEventError('이벤트 목록을 불러오지 못했어요.')), []);
 
   useEffect(() => {
-    if (personId == null) {
-      setLoading(false);
+    if (!authenticated) return;
+    refreshEvents();
+  }, [authenticated, refreshEvents]);
+
+  // Resolve identity for the selected event from storage.
+  useEffect(() => {
+    if (selectedEventId == null) {
+      setEventIdentity(null);
       return;
     }
-    setLoading(true);
-    refreshEvents().finally(() => {
-      setEventsLoaded(true);
-      setLoading(false);
-    });
-  }, [personId, refreshEvents]);
-
-  // Once the roster is picked and events have loaded, resolve a shared link:
-  // jump into that event, or fall back to the list if it no longer exists.
-  useEffect(() => {
-    if (!pendingEventId || !eventsLoaded) return;
-    if (events.some((e) => e.id === pendingEventId)) {
-      setSelectedEventId(pendingEventId);
-    }
-    setPendingEventId(null);
-    const url = new URL(window.location.href);
-    url.searchParams.delete('event');
-    window.history.replaceState({}, '', url);
-  }, [pendingEventId, eventsLoaded, events]);
+    setEventIdentity(localStorage.getItem(identityKey(selectedEventId)) || null);
+  }, [selectedEventId]);
 
   const refreshResponses = useCallback(() => {
     if (selectedEventId == null) return Promise.resolve();
@@ -105,77 +81,91 @@ export default function App() {
   }, [selectedEventId]);
 
   useEffect(() => {
-    if (selectedEventId == null) return;
+    if (selectedEventId == null) return undefined;
     setSelectedTab('attending');
-    refreshResponses();
+    setLoadingEvent(true);
+    refreshResponses()
+      .catch(() => {
+        setEventError('이벤트를 불러오지 못했어요.');
+        setSelectedEventId(null);
+      })
+      .finally(() => setLoadingEvent(false));
 
-    const interval = setInterval(() => {
-      refreshResponses();
-      refreshEvents();
-    }, POLL_MS);
+    const interval = setInterval(refreshResponses, POLL_MS);
     return () => clearInterval(interval);
-  }, [selectedEventId, refreshResponses, refreshEvents]);
+  }, [selectedEventId, refreshResponses]);
 
-  function handleSelectPerson(id) {
-    localStorage.setItem(IDENTITY_KEY, String(id));
-    setPersonId(id);
-    setPickerError('');
-  }
-
-  function handleAddPerson(name, department) {
-    return addPerson({ name, department }).then((person) => {
-      setPeople((prev) => [...prev, person]);
-      return person;
-    });
-  }
-
-  function handleSwitchUser() {
-    localStorage.removeItem(IDENTITY_KEY);
-    setPersonId(null);
-  }
+  // Drop a stale identity that no longer matches the event's participants.
+  useEffect(() => {
+    if (selectedEventId == null || eventIdentity == null) return;
+    if (responses.length > 0 && !responses.some((p) => p.personId === eventIdentity)) {
+      localStorage.removeItem(identityKey(selectedEventId));
+      setEventIdentity(null);
+    }
+  }, [responses, eventIdentity, selectedEventId]);
 
   function handleSelectEvent(eventId) {
     setSelectedEventId(eventId);
+    setResponses([]);
   }
 
-  function handleBackToList() {
+  function handleBackToEvents() {
     setSelectedEventId(null);
     setResponses([]);
     refreshEvents();
   }
 
+  function handleSelectName(participantId) {
+    localStorage.setItem(identityKey(selectedEventId), participantId);
+    setEventIdentity(participantId);
+  }
+
+  function handleSwitchName() {
+    localStorage.removeItem(identityKey(selectedEventId));
+    setEventIdentity(null);
+  }
+
+  function handleAddParticipant(name, department) {
+    return addParticipant(selectedEventId, { name, department }).then(() => refreshResponses());
+  }
+
+  function handleRemoveParticipant(participantId) {
+    return removeParticipant(selectedEventId, participantId).then(() => {
+      if (participantId === eventIdentity) handleSwitchName();
+      return refreshResponses();
+    });
+  }
+
   function handleCreateEvent({ title, eventDate, description, multiSelect }) {
-    return createEvent({ title, eventDate, description, createdBy: personId, multiSelect }).then((event) => {
+    return createEvent({ title, eventDate, description, multiSelect }).then((event) => {
       setEvents((prev) => [event, ...prev]);
       return event;
     });
   }
 
   function handleDeleteEvent(eventId, password) {
-    // Return the promise so the delete modal can show the error (e.g. wrong
-    // password) inline and keep itself open, instead of failing silently.
     return deleteEvent(eventId, password).then(() => {
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
     });
   }
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);
-  const me = responses.find((p) => p.personId === personId);
+  const me = responses.find((p) => p.personId === eventIdentity);
   const myAttending = me?.attending ?? null;
   const myNote = me?.note ?? null;
   const myOptions = me?.menuOptions ?? [];
   const menuOptions = selectedEvent?.menuOptions ?? [];
 
   function handleSetAttending(attending) {
-    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, attending } : p)));
-    putEventResponse(selectedEventId, personId, { attending, note: myNote, menuOptions: myOptions, meal: null })
+    setResponses((prev) => prev.map((p) => (p.personId === eventIdentity ? { ...p, attending } : p)));
+    putEventResponse(selectedEventId, eventIdentity, { attending, note: myNote, menuOptions: myOptions })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
 
   function handleSetNote(note) {
-    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, note } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note, menuOptions: myOptions, meal: null })
+    setResponses((prev) => prev.map((p) => (p.personId === eventIdentity ? { ...p, note } : p)));
+    putEventResponse(selectedEventId, eventIdentity, { attending: myAttending, note, menuOptions: myOptions })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
@@ -190,8 +180,8 @@ export default function App() {
     } else {
       nextOptions = myOptions.includes(option) ? [] : [option];
     }
-    setResponses((prev) => prev.map((p) => (p.personId === personId ? { ...p, menuOptions: nextOptions } : p)));
-    putEventResponse(selectedEventId, personId, { attending: myAttending, note: myNote, menuOptions: nextOptions, meal: null })
+    setResponses((prev) => prev.map((p) => (p.personId === eventIdentity ? { ...p, menuOptions: nextOptions } : p)));
+    putEventResponse(selectedEventId, eventIdentity, { attending: myAttending, note: myNote, menuOptions: nextOptions })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
@@ -217,40 +207,56 @@ export default function App() {
       .catch(() => {});
   }
 
-  function handleDeletePerson(id) {
-    deletePerson(id)
-      .then(() => {
-        setPeople((prev) => prev.filter((p) => p.id !== id));
-        if (id === personId) handleSwitchUser();
-      })
-      .catch((err) => alert(err.message || '삭제하지 못했어요'));
+  // --- Base roster admin ---
+  function openRosterAdmin() {
+    setRosterError('');
+    setRosterPasswordModal(true);
   }
 
+  function unlockRosterAdmin(password) {
+    return verifyRosterPassword(password).then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || '비밀번호가 틀렸습니다');
+      }
+      const people = await fetchPeople();
+      setRosterPeople(people);
+      setRosterPassword(password);
+      setRosterPasswordModal(false);
+    });
+  }
+
+  function handleAdminAdd(name, department) {
+    return addPerson({ name, department, password: rosterPassword }).then((person) => {
+      setRosterPeople((prev) => [...prev, person]);
+    });
+  }
+
+  function handleAdminDelete(personId) {
+    return deletePerson(personId, rosterPassword).then(() => {
+      setRosterPeople((prev) => prev.filter((p) => p.id !== personId));
+    });
+  }
+
+  // --- Render ---
   if (!authenticated) {
     return <AuthScreen onAuthenticated={() => setAuthenticated(true)} />;
   }
 
-  if (personId == null) {
+  // Base roster admin screen (over the event list)
+  if (rosterPassword != null) {
     return (
       <div className="app-container">
         <NamePicker
-          people={people}
+          people={rosterPeople}
           departments={departments}
-          onSelect={handleSelectPerson}
-          onAdd={handleAddPerson}
-          onDelete={handleDeletePerson}
-          error={pickerError}
+          onAdd={handleAdminAdd}
+          onDelete={handleAdminDelete}
+          selectable={false}
+          title="👥 기본 명단 관리"
+          subtitle="여기서 바꾸면 앞으로 만드는 이벤트에 반영돼요"
+          onClose={() => setRosterPassword(null)}
         />
-      </div>
-    );
-  }
-
-  if (loading || pendingEventId) {
-    return (
-      <div className="app-container">
-        <div className="header">
-          <h1 className="header-title">📋 이벤트 참석 현황</h1>
-        </div>
       </div>
     );
   }
@@ -263,7 +269,43 @@ export default function App() {
           onSelect={handleSelectEvent}
           onCreate={handleCreateEvent}
           onDelete={handleDeleteEvent}
+          onOpenRosterAdmin={openRosterAdmin}
           error={eventError}
+        />
+        {rosterPasswordModal && (
+          <RosterPasswordModal
+            onSubmit={unlockRosterAdmin}
+            onClose={() => setRosterPasswordModal(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (loadingEvent) {
+    return (
+      <div className="app-container">
+        <div className="header">
+          <h1 className="header-title">📋 이벤트 참석 현황</h1>
+        </div>
+      </div>
+    );
+  }
+
+  // Event selected but no name chosen yet → event's own name picker
+  if (eventIdentity == null) {
+    const pickerPeople = responses.map((r) => ({ id: r.personId, name: r.name, department: r.department }));
+    return (
+      <div className="app-container">
+        <NamePicker
+          people={pickerPeople}
+          departments={departments}
+          onSelect={handleSelectName}
+          onAdd={handleAddParticipant}
+          onDelete={handleRemoveParticipant}
+          title={selectedEvent?.title || '이벤트'}
+          subtitle="본인 이름을 선택해주세요"
+          onClose={handleBackToEvents}
         />
       </div>
     );
@@ -279,15 +321,15 @@ export default function App() {
         eventTitle={selectedEvent?.title || '이벤트'}
         eventDateStr={formatKoreanDateFromISO(selectedEvent?.eventDate)}
         myName={me?.name}
-        onSwitchUser={handleSwitchUser}
-        onBackToList={handleBackToList}
+        onSwitchUser={handleSwitchName}
+        onBackToList={handleBackToEvents}
       />
 
       <MyStatus
         myAttending={myAttending}
         myNote={myNote}
         myOptions={myOptions}
-        menuEnabled={Boolean(selectedEvent?.menuEnabled)}
+        menuEnabled
         menuOptions={menuOptions}
         multiSelect={selectedEvent?.multiSelect ?? true}
         onSetAttending={handleSetAttending}
@@ -309,13 +351,53 @@ export default function App() {
         absentPeople={absentPeople}
         pendingPeople={pendingPeople}
         selectedTab={selectedTab}
-        myPersonId={personId}
+        myPersonId={eventIdentity}
         eventTitle={selectedEvent?.title}
       />
 
       <Settings />
 
       <Footer lastUpdated={lastUpdated} />
+    </div>
+  );
+}
+
+function RosterPasswordModal({ onSubmit, onClose }) {
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    onSubmit(password).catch((err) => {
+      setError(err.message || '비밀번호가 틀렸습니다');
+      setSubmitting(false);
+    });
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <form className="modal-box" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <div className="modal-title">기본 명단 관리</div>
+        <div className="modal-text">관리 비밀번호를 입력하세요.</div>
+        <input
+          type="password"
+          className="modal-input"
+          placeholder="비밀번호"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={submitting}
+          autoFocus
+        />
+        {error && <div className="modal-error">{error}</div>}
+        <div className="modal-actions">
+          <button type="submit" className="modal-btn-danger" disabled={submitting}>확인</button>
+          <button type="button" className="modal-btn-cancel" onClick={onClose} disabled={submitting}>취소</button>
+        </div>
+      </form>
     </div>
   );
 }

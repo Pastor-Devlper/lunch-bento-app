@@ -9,6 +9,8 @@ app.use(express.json());
 
 const PASSWORD = process.env.PASSWORD;
 const DELETE_PASSWORD = process.env.DELETE_PASSWORD;
+// The delete password doubles as the admin password for editing the base roster.
+const ADMIN_PASSWORD = DELETE_PASSWORD;
 
 function isValidDate(date) {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
@@ -41,17 +43,30 @@ app.get('/api/departments', (req, res) => {
   res.json(DEPARTMENTS);
 });
 
-// Full roster (used for the name picker / identity screen).
+// Verify the admin password (used to unlock base-roster management).
+app.post('/api/roster/auth', (req, res) => {
+  if (req.body.password === ADMIN_PASSWORD) {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ error: '비밀번호가 틀렸습니다' });
+  }
+});
+
+// Base roster — the master list new events snapshot from. Editing it only
+// affects events created afterwards; existing events keep their own snapshot.
 app.get('/api/people', async (req, res) => {
   const rows = await people.find().sort({ _id: 1 }).toArray();
   res.json(rows.map(personOut));
 });
 
-// Add a new person to a department (new hire, or a one-off visitor under '방문').
+// Add a person to the base roster. Admin only.
 app.post('/api/people', async (req, res) => {
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
-  const { department } = req.body;
+  const { department, password } = req.body;
 
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
+  }
   if (!name) {
     return res.status(400).json({ error: '이름을 입력해주세요' });
   }
@@ -67,25 +82,26 @@ app.post('/api/people', async (req, res) => {
   res.status(201).json({ id: result.insertedId.toString(), name, department });
 });
 
-// Delete a person
+// Delete a person from the base roster. Admin only. Does NOT touch existing
+// events (they keep their own participant snapshot).
 app.delete('/api/people/:personId', async (req, res) => {
+  if (req.body.password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
+  }
   const personId = toObjectId(req.params.personId);
   if (!personId) {
     return res.status(404).json({ error: 'unknown person' });
   }
-  const person = await people.findOne({ _id: personId });
-  if (!person) {
+  const result = await people.deleteOne({ _id: personId });
+  if (result.deletedCount === 0) {
     return res.status(404).json({ error: 'unknown person' });
   }
-  await eventResponses.deleteMany({ personId });
-  await people.deleteOne({ _id: personId });
   res.json({ success: true });
 });
 
-// All events, with attendance/absence/pending counts across the current roster.
+// All events, with attendance/absence/pending counts over each event's own
+// participant snapshot.
 app.get('/api/events', async (req, res) => {
-  const totalPeople = await people.countDocuments();
-
   const rows = await events.aggregate([
     {
       $lookup: {
@@ -96,25 +112,17 @@ app.get('/api/events', async (req, res) => {
       },
     },
     {
-      $lookup: {
-        from: 'people',
-        localField: 'createdBy',
-        foreignField: '_id',
-        as: 'creator',
-      },
-    },
-    {
       $addFields: {
+        total: { $size: { $ifNull: ['$participants', []] } },
         attendingCount: {
           $size: { $filter: { input: '$responses', cond: { $eq: ['$$this.attending', true] } } },
         },
         absentCount: {
           $size: { $filter: { input: '$responses', cond: { $eq: ['$$this.attending', false] } } },
         },
-        createdByName: { $arrayElemAt: ['$creator.name', 0] },
       },
     },
-    { $project: { responses: 0, creator: 0 } },
+    { $project: { responses: 0, participants: 0 } },
     { $sort: { eventDate: -1, _id: -1 } },
   ]).toArray();
 
@@ -124,23 +132,21 @@ app.get('/api/events', async (req, res) => {
     eventDate: e.eventDate,
     description: e.description,
     createdAt: e.createdAt,
-    createdByName: e.createdByName || null,
     menuEnabled: true,
     mealEnabled: false,
     multiSelect: Boolean(e.multiSelect),
     menuOptions: e.menuOptions || [],
     attendingCount: e.attendingCount || 0,
     absentCount: e.absentCount || 0,
-    pendingCount: totalPeople - (e.attendingCount || 0) - (e.absentCount || 0),
+    pendingCount: (e.total || 0) - (e.attendingCount || 0) - (e.absentCount || 0),
   })));
 });
 
-// Create a new event. Menu selection is always on; multiSelect controls whether
-// a person may pick more than one option.
+// Create a new event. Snapshots the current base roster into the event so its
+// participant list is independent from then on.
 app.post('/api/events', async (req, res) => {
   const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
   const { eventDate, description, multiSelect } = req.body;
-  const createdBy = toObjectId(req.body.createdBy);
 
   if (!title) {
     return res.status(400).json({ error: '이벤트 이름을 입력해주세요' });
@@ -148,9 +154,13 @@ app.post('/api/events', async (req, res) => {
   if (eventDate != null && !isValidDate(eventDate)) {
     return res.status(400).json({ error: 'eventDate must be YYYY-MM-DD or null' });
   }
-  if (!createdBy || !(await people.findOne({ _id: createdBy }))) {
-    return res.status(400).json({ error: 'unknown createdBy person' });
-  }
+
+  const baseRoster = await people.find().sort({ _id: 1 }).toArray();
+  const participants = baseRoster.map((p) => ({
+    id: p._id.toString(),
+    name: p.name,
+    department: p.department,
+  }));
 
   const multiSelectValue = multiSelect !== false;
   const now = new Date().toISOString();
@@ -158,13 +168,12 @@ app.post('/api/events', async (req, res) => {
     title,
     eventDate: eventDate || null,
     description: description || null,
-    createdBy,
     createdAt: now,
     multiSelect: multiSelectValue,
     menuOptions: [],
+    participants,
   };
   const result = await events.insertOne(doc);
-  const totalPeople = await people.countDocuments();
 
   res.status(201).json({
     id: result.insertedId.toString(),
@@ -178,8 +187,54 @@ app.post('/api/events', async (req, res) => {
     menuOptions: [],
     attendingCount: 0,
     absentCount: 0,
-    pendingCount: totalPeople,
+    pendingCount: participants.length,
   });
+});
+
+// Add a participant to this event's roster only (a visitor for this event).
+app.post('/api/events/:eventId/participants', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+  const { department } = req.body;
+
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  if (!name) {
+    return res.status(400).json({ error: '이름을 입력해주세요' });
+  }
+  if (!DEPARTMENTS.includes(department)) {
+    return res.status(400).json({ error: 'invalid department' });
+  }
+  const event = await events.findOne({ _id: eventId });
+  if (!event) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  if ((event.participants || []).some((p) => p.name === name)) {
+    return res.status(409).json({ error: '이미 등록된 이름이에요' });
+  }
+
+  const participant = { id: new ObjectId().toString(), name, department };
+  await events.updateOne({ _id: eventId }, { $push: { participants: participant } });
+  res.status(201).json(participant);
+});
+
+// Remove a participant from this event's roster (and their response for it).
+app.delete('/api/events/:eventId/participants/:participantId', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  const { participantId } = req.params;
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  await events.updateOne(
+    { _id: eventId },
+    { $pull: { participants: { id: participantId } } },
+  );
+  const pid = toObjectId(participantId);
+  if (pid) {
+    await eventResponses.deleteOne({ eventId, personId: pid });
+  }
+  res.json({ success: true });
 });
 
 // Add a new menu option to an event's persistent option pool (visible to everyone,
@@ -255,7 +310,7 @@ app.delete('/api/events/:eventId', async (req, res) => {
   res.json({ success: true });
 });
 
-// Everyone's attendance/note status for a given event.
+// Everyone's attendance/note status for a given event, over its participants.
 app.get('/api/events/:eventId/responses', async (req, res) => {
   const eventId = toObjectId(req.params.eventId);
   if (!eventId) {
@@ -266,17 +321,15 @@ app.get('/api/events/:eventId/responses', async (req, res) => {
     return res.status(404).json({ error: 'unknown event' });
   }
 
-  const [allPeople, allResponses] = await Promise.all([
-    people.find().sort({ _id: 1 }).toArray(),
-    eventResponses.find({ eventId }).toArray(),
-  ]);
+  const allResponses = await eventResponses.find({ eventId }).toArray();
   const byPersonId = new Map(allResponses.map((r) => [r.personId.toString(), r]));
 
-  const rows = allPeople.map((p) => {
-    const r = byPersonId.get(p._id.toString());
+  const rows = (event.participants || []).map((p) => {
+    const r = byPersonId.get(p.id);
     return {
-      personId: p._id.toString(),
+      personId: p.id,
       name: p.name,
+      department: p.department,
       attending: r?.attending ?? null,
       note: r?.note ?? null,
       menuOptions: r?.menuOptions ?? [],
@@ -286,17 +339,19 @@ app.get('/api/events/:eventId/responses', async (req, res) => {
   res.json(rows);
 });
 
-// Upsert one person's attendance/note/menu choices for a given event.
+// Upsert one participant's attendance/note/menu choices for a given event.
 app.put('/api/events/:eventId/responses/:personId', async (req, res) => {
   const eventId = toObjectId(req.params.eventId);
-  const personId = toObjectId(req.params.personId);
+  const participantId = req.params.personId;
+  const personId = toObjectId(participantId);
   const { attending, note, menuOptions } = req.body;
 
-  if (!eventId || !(await events.findOne({ _id: eventId }))) {
+  const event = eventId ? await events.findOne({ _id: eventId }) : null;
+  if (!event) {
     return res.status(404).json({ error: 'unknown event' });
   }
-  if (!personId || !(await people.findOne({ _id: personId }))) {
-    return res.status(404).json({ error: 'unknown person' });
+  if (!personId || !(event.participants || []).some((p) => p.id === participantId)) {
+    return res.status(404).json({ error: 'unknown participant' });
   }
   if (attending !== null && typeof attending !== 'boolean') {
     return res.status(400).json({ error: 'attending must be boolean or null' });
@@ -334,35 +389,6 @@ app.put('/api/events/:eventId/responses/:personId', async (req, res) => {
     menuOptions: cleanOptions,
     updatedAt: now,
   });
-});
-
-// Per-person reminder preference.
-app.get('/api/settings/:personId', async (req, res) => {
-  const personId = toObjectId(req.params.personId);
-  if (!personId) {
-    return res.status(404).json({ error: 'unknown person' });
-  }
-  const person = await people.findOne({ _id: personId });
-  if (!person) {
-    return res.status(404).json({ error: 'unknown person' });
-  }
-  res.json({ reminderEnabled: Boolean(person.reminderEnabled) });
-});
-
-app.put('/api/settings/:personId', async (req, res) => {
-  const personId = toObjectId(req.params.personId);
-  const { reminderEnabled } = req.body;
-  if (typeof reminderEnabled !== 'boolean') {
-    return res.status(400).json({ error: 'reminderEnabled must be boolean' });
-  }
-  if (!personId) {
-    return res.status(404).json({ error: 'unknown person' });
-  }
-  const result = await people.updateOne({ _id: personId }, { $set: { reminderEnabled } });
-  if (result.matchedCount === 0) {
-    return res.status(404).json({ error: 'unknown person' });
-  }
-  res.json({ reminderEnabled });
 });
 
 const PORT = process.env.PORT || 3001;

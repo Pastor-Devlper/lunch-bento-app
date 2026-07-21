@@ -117,7 +117,7 @@ function DeleteEventModal({ event, onConfirm, onClose }) {
   );
 }
 
-export default function EventList({ events, onSelect, onCreate, onDelete, error }) {
+export default function EventList({ events, onSelect, onCreate, onDelete, onOpenRosterAdmin, error }) {
   const [creating, setCreating] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState(null);
 
@@ -187,6 +187,12 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
       ) : (
         <button type="button" className="event-new-btn" onClick={() => setCreating(true)}>
           + 새 이벤트 만들기
+        </button>
+      )}
+
+      {onOpenRosterAdmin && !creating && (
+        <button type="button" className="roster-admin-btn" onClick={onOpenRosterAdmin}>
+          👥 기본 명단 관리
         </button>
       )}
 

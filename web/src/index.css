@@ -583,6 +583,7 @@ button {
 
 /* Name picker (identity screen) */
 .picker-container {
+  position: relative;
   max-width: 480px;
   margin: 80px auto;
   background: white;
@@ -591,6 +592,36 @@ button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   text-align: center;
   animation: slideDown 0.6s ease-out;
+}
+
+.picker-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #888;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.picker-close-btn:hover {
+  background: #e0e0e0;
+  color: #555;
+}
+
+.picker-btn.static {
+  cursor: default;
+}
+
+.picker-btn.static:hover {
+  background: #f8f9fa;
+  border-color: transparent;
 }
 
 .picker-title {
@@ -900,6 +931,23 @@ button {
   border-color: #4ECDC4;
   color: #4ECDC4;
   background: #E8F8F5;
+}
+
+.roster-admin-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #999;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.roster-admin-btn:hover {
+  color: #667eea;
 }
 
 .event-new-form {

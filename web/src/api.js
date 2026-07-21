@@ -24,19 +24,43 @@ export function fetchDepartments() {
   return request('/departments');
 }
 
+// --- Base roster (admin, password-gated) ---
+export function verifyRosterPassword(password) {
+  return fetch(`${BASE}/roster/auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+}
+
 export function fetchPeople() {
   return request('/people');
 }
 
-export function addPerson({ name, department }) {
+export function addPerson({ name, department, password }) {
   return request('/people', {
+    method: 'POST',
+    body: JSON.stringify({ name, department, password }),
+  });
+}
+
+export function deletePerson(personId, password) {
+  return request(`/people/${personId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ password }),
+  });
+}
+
+// --- Per-event participants ---
+export function addParticipant(eventId, { name, department }) {
+  return request(`/events/${eventId}/participants`, {
     method: 'POST',
     body: JSON.stringify({ name, department }),
   });
 }
 
-export function deletePerson(personId) {
-  return request(`/people/${personId}`, {
+export function removeParticipant(eventId, participantId) {
+  return request(`/events/${eventId}/participants/${participantId}`, {
     method: 'DELETE',
   });
 }
@@ -45,10 +69,10 @@ export function fetchEvents() {
   return request('/events');
 }
 
-export function createEvent({ title, eventDate, description, createdBy, multiSelect }) {
+export function createEvent({ title, eventDate, description, multiSelect }) {
   return request('/events', {
     method: 'POST',
-    body: JSON.stringify({ title, eventDate, description, createdBy, multiSelect }),
+    body: JSON.stringify({ title, eventDate, description, multiSelect }),
   });
 }
 
@@ -77,20 +101,9 @@ export function fetchEventResponses(eventId) {
   return request(`/events/${eventId}/responses`);
 }
 
-export function putEventResponse(eventId, personId, { attending, note, menuOptions, meal }) {
+export function putEventResponse(eventId, personId, { attending, note, menuOptions }) {
   return request(`/events/${eventId}/responses/${personId}`, {
     method: 'PUT',
-    body: JSON.stringify({ attending, note, menuOptions, meal }),
-  });
-}
-
-export function fetchSettings(personId) {
-  return request(`/settings/${personId}`);
-}
-
-export function putSettings(personId, { reminderEnabled }) {
-  return request(`/settings/${personId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ reminderEnabled }),
+    body: JSON.stringify({ attending, note, menuOptions }),
   });
 }

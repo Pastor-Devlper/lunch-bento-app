@@ -42,6 +42,25 @@ async function init() {
       { upsert: true },
     );
   }
+
+  // Migrate legacy events (created before per-event rosters) by snapshotting
+  // the current base roster into them, so their existing responses keep
+  // mapping to a participant and their tallies don't change.
+  const legacy = await events.find({ participants: { $exists: false } }).toArray();
+  if (legacy.length > 0) {
+    const baseRoster = await people.find().sort({ _id: 1 }).toArray();
+    const snapshot = baseRoster.map((p) => ({
+      id: p._id.toString(),
+      name: p.name,
+      department: p.department,
+    }));
+    await events.updateMany(
+      { participants: { $exists: false } },
+      { $set: { participants: snapshot } },
+    );
+    console.log(`Snapshotted base roster into ${legacy.length} legacy event(s)`);
+  }
+
   console.log('MongoDB connected and roster seeded');
 }
 

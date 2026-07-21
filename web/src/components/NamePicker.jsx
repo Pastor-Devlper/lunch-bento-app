@@ -37,7 +37,11 @@ function AddPersonForm({ department, onAdd, onDone }) {
   );
 }
 
-export default function NamePicker({ people, departments, onSelect, onAdd, onDelete, error }) {
+export default function NamePicker({
+  people, departments, onSelect, onAdd, onDelete, error,
+  title = '📋 이벤트 참석 현황', subtitle = '본인 이름을 선택해주세요',
+  selectable = true, onClose,
+}) {
   const [addingDept, setAddingDept] = useState(null);
   const [deletingDept, setDeletingDept] = useState(null);
   const [deletingPerson, setDeletingPerson] = useState(null);
@@ -54,8 +58,11 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
 
   return (
     <div className="picker-container">
-      <div className="picker-title">📋 이벤트 참석 현황</div>
-      <div className="picker-subtitle">본인 이름을 선택해주세요</div>
+      {onClose && (
+        <button type="button" className="picker-close-btn" onClick={onClose} aria-label="닫기">×</button>
+      )}
+      <div className="picker-title">{title}</div>
+      <div className="picker-subtitle">{subtitle}</div>
 
       {departments.map((department) => {
         const members = people.filter((p) => p.department === department);
@@ -68,8 +75,11 @@ export default function NamePicker({ people, departments, onSelect, onAdd, onDel
                 <button
                   key={person.id}
                   type="button"
-                  className={`picker-btn${isDeleting ? ' deleting' : ''}`}
-                  onClick={() => (isDeleting ? handleDeleteClick(person) : onSelect(person.id))}
+                  className={`picker-btn${isDeleting ? ' deleting' : ''}${!selectable && !isDeleting ? ' static' : ''}`}
+                  onClick={() => {
+                    if (isDeleting) handleDeleteClick(person);
+                    else if (selectable) onSelect(person.id);
+                  }}
                 >
                   {isDeleting && '🗑 '}{person.name}
                 </button>
