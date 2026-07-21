@@ -75,15 +75,55 @@ function NewEventForm({ onCreate, onDone }) {
   );
 }
 
+function DeleteEventModal({ event, onConfirm, onClose }) {
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    onConfirm(password).catch((err) => {
+      setError(err.message || '삭제하지 못했어요');
+      setSubmitting(false);
+    });
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <form className="modal-box" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <div className="modal-title">이벤트 삭제</div>
+        <div className="modal-text">
+          '{event.title}' 이벤트를 삭제할까요?<br />응답 데이터도 함께 삭제됩니다.
+        </div>
+        <input
+          type="password"
+          className="modal-input"
+          placeholder="삭제 비밀번호"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={submitting}
+          autoFocus
+        />
+        {error && <div className="modal-error">{error}</div>}
+        <div className="modal-actions">
+          <button type="submit" className="modal-btn-danger" disabled={submitting}>삭제</button>
+          <button type="button" className="modal-btn-cancel" onClick={onClose} disabled={submitting}>취소</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function EventList({ events, onSelect, onCreate, onDelete, error }) {
   const [creating, setCreating] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState(null);
 
-  function handleDelete(e, eventId) {
+  function handleDelete(e, event) {
     e.stopPropagation();
-    if (!confirm('이 이벤트를 삭제할까요? 응답 데이터도 함께 삭제됩니다.')) return;
-    const password = prompt('삭제 비밀번호를 입력하세요');
-    if (password === null) return;
-    onDelete(eventId, password);
+    setDeletingEvent(event);
   }
 
   function handleShare(e, event) {
@@ -133,7 +173,7 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
             <button
               type="button"
               className="event-card-delete"
-              onClick={(e) => handleDelete(e, event.id)}
+              onClick={(e) => handleDelete(e, event)}
               aria-label="이벤트 삭제"
             >
               ×
@@ -151,6 +191,16 @@ export default function EventList({ events, onSelect, onCreate, onDelete, error 
       )}
 
       {error && <div className="picker-error">{error}</div>}
+
+      {deletingEvent && (
+        <DeleteEventModal
+          event={deletingEvent}
+          onConfirm={(password) =>
+            onDelete(deletingEvent.id, password).then(() => setDeletingEvent(null))
+          }
+          onClose={() => setDeletingEvent(null)}
+        />
+      )}
     </div>
   );
 }

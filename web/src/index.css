@@ -1057,6 +1057,102 @@ button {
   margin-top: 12px;
 }
 
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.25s ease-out;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.modal-text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.modal-input:focus {
+  border-color: #4ECDC4;
+}
+
+.modal-error {
+  color: #FF6B6B;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-btn-danger,
+.modal-btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.modal-btn-danger {
+  background: #FF6B6B;
+  color: white;
+}
+
+.modal-btn-danger:hover:not(:disabled) {
+  background: #FF5252;
+}
+
+.modal-btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.modal-btn-danger:disabled,
+.modal-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Animations */
 @keyframes slideDown {
   from {
