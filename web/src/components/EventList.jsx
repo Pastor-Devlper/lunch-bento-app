@@ -117,7 +117,7 @@ function DeleteEventModal({ event, onConfirm, onClose }) {
   );
 }
 
-export default function EventList({ events, onSelect, onCreate, onDelete, onOpenRosterAdmin, error }) {
+export default function EventList({ events, loading, onSelect, onCreate, onDelete, onOpenRosterAdmin, error }) {
   const [creating, setCreating] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState(null);
 
@@ -137,7 +137,13 @@ export default function EventList({ events, onSelect, onCreate, onDelete, onOpen
       <div className="picker-subtitle">참석 인원을 확인할 이벤트를 선택하세요</div>
 
       <div className="event-list">
-        {events.length === 0 && <div className="empty-hint">아직 이벤트가 없어요</div>}
+        {loading && events.length === 0 && (
+          <div className="empty-hint loading-hint">
+            <span className="loading-spinner" aria-hidden="true" />
+            데이터를 불러오는 중이에요…
+          </div>
+        )}
+        {!loading && events.length === 0 && <div className="empty-hint">아직 이벤트가 없어요</div>}
         {events.map((event) => (
           <div
             key={event.id}

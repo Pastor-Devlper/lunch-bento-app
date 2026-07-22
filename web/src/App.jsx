@@ -29,6 +29,7 @@ export default function App() {
   });
   const [departments, setDepartments] = useState([]);
   const [events, setEvents] = useState([]);
+  const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventError, setEventError] = useState('');
   const [selectedEventId, setSelectedEventId] = useState(() =>
     new URLSearchParams(window.location.search).get('event') || null);
@@ -56,7 +57,13 @@ export default function App() {
   }, []);
 
   const refreshEvents = useCallback(() =>
-    fetchEvents().then(setEvents).catch(() => setEventError('이벤트 목록을 불러오지 못했어요.')), []);
+    fetchEvents()
+      .then((rows) => {
+        setEvents(rows);
+        setEventError('');
+      })
+      .catch(() => setEventError('이벤트 목록을 불러오지 못했어요.'))
+      .finally(() => setEventsLoaded(true)), []);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -266,6 +273,7 @@ export default function App() {
       <div className="app-container">
         <EventList
           events={events}
+          loading={!eventsLoaded}
           onSelect={handleSelectEvent}
           onCreate={handleCreateEvent}
           onDelete={handleDeleteEvent}
