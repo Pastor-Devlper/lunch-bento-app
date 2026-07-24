@@ -126,14 +126,14 @@ export default function MyStatus({
           <button
             type="button"
             className={`status-btn attend${myAttending === true ? ' selected' : ''}`}
-            onClick={() => onSetAttending(true)}
+            onClick={() => onSetAttending(myAttending === true ? null : true)}
           >
             ✓ 참석
           </button>
           <button
             type="button"
             className={`status-btn attend${myAttending === false ? ' selected' : ''}`}
-            onClick={() => onSetAttending(false)}
+            onClick={() => onSetAttending(myAttending === false ? null : false)}
           >
             ✗ 미참석
           </button>
