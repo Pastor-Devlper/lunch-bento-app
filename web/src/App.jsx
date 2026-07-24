@@ -171,8 +171,12 @@ export default function App() {
   const menuOptions = selectedEvent?.menuOptions ?? [];
 
   function handleSetAttending(attending) {
-    setResponses((prev) => prev.map((p) => (p.personId === eventIdentity ? { ...p, attending } : p)));
-    putEventResponse(selectedEventId, eventIdentity, { attending, note: myNote, menuOptions: myOptions })
+    // Menu choices only make sense for attendees; clear them when not attending.
+    const nextOptions = attending === true ? myOptions : [];
+    setResponses((prev) => prev.map((p) => (
+      p.personId === eventIdentity ? { ...p, attending, menuOptions: nextOptions } : p
+    )));
+    putEventResponse(selectedEventId, eventIdentity, { attending, note: myNote, menuOptions: nextOptions })
       .then(() => refreshResponses())
       .catch(() => refreshResponses());
   }
