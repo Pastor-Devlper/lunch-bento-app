@@ -10,7 +10,7 @@ import AuthScreen from './components/AuthScreen.jsx';
 import EventList from './components/EventList.jsx';
 import {
   fetchDepartments, fetchPeople, addPerson, deletePerson, verifyRosterPassword,
-  fetchEvents, createEvent, deleteEvent,
+  fetchEvents, createEvent, updateEvent, deleteEvent,
   addParticipant, removeParticipant,
   addMenuOption, removeMenuOption, fetchEventResponses, putEventResponse,
 } from './api.js';
@@ -150,6 +150,13 @@ export default function App() {
     });
   }
 
+  function handleUpdateEvent(eventId, data) {
+    return updateEvent(eventId, data).then((updated) => {
+      setEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, ...updated } : e)));
+      return updated;
+    });
+  }
+
   function handleDeleteEvent(eventId, password) {
     return deleteEvent(eventId, password).then(() => {
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
@@ -276,6 +283,7 @@ export default function App() {
           loading={!eventsLoaded}
           onSelect={handleSelectEvent}
           onCreate={handleCreateEvent}
+          onUpdate={handleUpdateEvent}
           onDelete={handleDeleteEvent}
           onOpenRosterAdmin={openRosterAdmin}
           error={eventError}
@@ -328,6 +336,7 @@ export default function App() {
       <Header
         eventTitle={selectedEvent?.title || '이벤트'}
         eventDateStr={formatKoreanDateFromISO(selectedEvent?.eventDate)}
+        eventDescription={selectedEvent?.description}
         myName={me?.name}
         onSwitchUser={handleSwitchName}
         onBackToList={handleBackToEvents}

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { formatKoreanDateFromISO } from '../dateUtils.js';
 import { shareEvent } from '../kakao.js';
 
-function NewEventForm({ onCreate, onDone }) {
-  const [title, setTitle] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [description, setDescription] = useState('');
-  const [multiSelect, setMultiSelect] = useState(true);
+function EventForm({ initial, submitLabel, onSubmit, onDone }) {
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [eventDate, setEventDate] = useState(initial?.eventDate ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [multiSelect, setMultiSelect] = useState(initial?.multiSelect ?? true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -16,7 +16,7 @@ function NewEventForm({ onCreate, onDone }) {
     if (!trimmedTitle || submitting) return;
     setSubmitting(true);
     setError('');
-    onCreate({
+    onSubmit({
       title: trimmedTitle,
       eventDate: eventDate || null,
       description: description.trim() || null,
@@ -24,7 +24,7 @@ function NewEventForm({ onCreate, onDone }) {
     })
       .then(() => onDone())
       .catch((err) => {
-        setError(err.message || '이벤트를 만들지 못했어요');
+        setError(err.message || '저장하지 못했어요');
         setSubmitting(false);
       });
   }
@@ -52,7 +52,7 @@ function NewEventForm({ onCreate, onDone }) {
       </label>
       <textarea
         className="event-new-input"
-        placeholder="설명 (선택)"
+        placeholder="설명 (선택) — 장소, 준비물, 회비 등"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         disabled={submitting}
@@ -67,7 +67,7 @@ function NewEventForm({ onCreate, onDone }) {
         복수 선택 (메뉴를 여러 개 고를 수 있어요)
       </label>
       <div className="event-new-actions">
-        <button type="submit" className="picker-add-confirm" disabled={submitting}>만들기</button>
+        <button type="submit" className="picker-add-confirm" disabled={submitting}>{submitLabel}</button>
         <button type="button" className="picker-add-cancel" onClick={onDone} disabled={submitting}>취소</button>
       </div>
       {error && <div className="picker-add-error">{error}</div>}
@@ -117,13 +117,20 @@ function DeleteEventModal({ event, onConfirm, onClose }) {
   );
 }
 
-export default function EventList({ events, loading, onSelect, onCreate, onDelete, onOpenRosterAdmin, error }) {
+export default function EventList({ events, loading, onSelect, onCreate, onUpdate, onDelete, onOpenRosterAdmin, error }) {
   const [creating, setCreating] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [deletingEvent, setDeletingEvent] = useState(null);
 
   function handleDelete(e, event) {
     e.stopPropagation();
     setDeletingEvent(event);
+  }
+
+  function handleEdit(e, event) {
+    e.stopPropagation();
+    setEditingEvent(event);
+    setCreating(false);
   }
 
   function handleShare(e, event) {
@@ -145,6 +152,15 @@ export default function EventList({ events, loading, onSelect, onCreate, onDelet
         )}
         {!loading && events.length === 0 && <div className="empty-hint">아직 이벤트가 없어요</div>}
         {events.map((event) => (
+          editingEvent && editingEvent.id === event.id ? (
+            <EventForm
+              key={event.id}
+              initial={event}
+              submitLabel="저장"
+              onSubmit={(data) => onUpdate(event.id, data)}
+              onDone={() => setEditingEvent(null)}
+            />
+          ) : (
           <div
             key={event.id}
             className="event-card"
@@ -161,6 +177,7 @@ export default function EventList({ events, loading, onSelect, onCreate, onDelet
             <div className="event-card-main">
               <div className="event-card-title">{event.menuEnabled && '🍹 '}{event.mealEnabled && '🍽️ '}{event.title}</div>
               {event.eventDate && <div className="event-card-date">{formatKoreanDateFromISO(event.eventDate)}</div>}
+              {event.description && <div className="event-card-desc">{event.description}</div>}
             </div>
             <div className="event-card-footer">
               <div className="event-card-counts">
@@ -176,22 +193,33 @@ export default function EventList({ events, loading, onSelect, onCreate, onDelet
                 💬 카톡 공유
               </button>
             </div>
-            <button
-              type="button"
-              className="event-card-delete"
-              onClick={(e) => handleDelete(e, event)}
-              aria-label="이벤트 삭제"
-            >
-              ×
-            </button>
+            <div className="event-card-tools">
+              <button
+                type="button"
+                className="event-card-edit"
+                onClick={(e) => handleEdit(e, event)}
+                aria-label="이벤트 수정"
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                className="event-card-delete"
+                onClick={(e) => handleDelete(e, event)}
+                aria-label="이벤트 삭제"
+              >
+                ×
+              </button>
+            </div>
           </div>
+          )
         ))}
       </div>
 
       {creating ? (
-        <NewEventForm onCreate={onCreate} onDone={() => setCreating(false)} />
+        <EventForm submitLabel="만들기" onSubmit={onCreate} onDone={() => setCreating(false)} />
       ) : (
-        <button type="button" className="event-new-btn" onClick={() => setCreating(true)}>
+        <button type="button" className="event-new-btn" onClick={() => { setCreating(true); setEditingEvent(null); }}>
           + 새 이벤트 만들기
         </button>
       )}

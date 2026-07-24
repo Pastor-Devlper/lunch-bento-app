@@ -191,6 +191,54 @@ app.post('/api/events', async (req, res) => {
   });
 });
 
+// Edit an event's basic info (title/date/description). Keeps participants and
+// responses untouched — this is for correcting details, not resetting the event.
+app.put('/api/events/:eventId', async (req, res) => {
+  const eventId = toObjectId(req.params.eventId);
+  const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+  const { eventDate, description, multiSelect } = req.body;
+
+  if (!eventId) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+  if (!title) {
+    return res.status(400).json({ error: '이벤트 이름을 입력해주세요' });
+  }
+  if (eventDate != null && !isValidDate(eventDate)) {
+    return res.status(400).json({ error: 'eventDate must be YYYY-MM-DD or null' });
+  }
+
+  const set = {
+    title,
+    eventDate: eventDate || null,
+    description: description || null,
+  };
+  if (multiSelect !== undefined) {
+    set.multiSelect = multiSelect !== false;
+  }
+
+  const result = await events.findOneAndUpdate(
+    { _id: eventId },
+    { $set: set },
+    { returnDocument: 'after' },
+  );
+  if (!result) {
+    return res.status(404).json({ error: 'unknown event' });
+  }
+
+  res.json({
+    id: result._id.toString(),
+    title: result.title,
+    eventDate: result.eventDate,
+    description: result.description,
+    createdAt: result.createdAt,
+    menuEnabled: true,
+    mealEnabled: false,
+    multiSelect: Boolean(result.multiSelect),
+    menuOptions: result.menuOptions || [],
+  });
+});
+
 // Add a participant to this event's roster only (a visitor for this event).
 app.post('/api/events/:eventId/participants', async (req, res) => {
   const eventId = toObjectId(req.params.eventId);

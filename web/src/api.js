@@ -76,6 +76,13 @@ export function createEvent({ title, eventDate, description, multiSelect }) {
   });
 }
 
+export function updateEvent(eventId, { title, eventDate, description, multiSelect }) {
+  return request(`/events/${eventId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ title, eventDate, description, multiSelect }),
+  });
+}
+
 export function deleteEvent(eventId, password) {
   return request(`/events/${eventId}`, {
     method: 'DELETE',
